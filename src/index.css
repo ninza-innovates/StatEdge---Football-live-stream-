@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* StatEdge.ai Design System - Dark sleek theme inspired by crypto finance platforms
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* StatEdge.ai Dark Theme */
+    --background: 221 50% 6%;           /* Deep navy #0B0F19 */
+    --foreground: 220 13% 91%;          /* White text #E5E7EB */
+    
+    /* Card components */
+    --card: 221 50% 8%;                 /* Panel #101522 */
+    --card-foreground: 220 13% 91%;     /* White text */
+
+    /* Popover components */
+    --popover: 221 39% 11%;             /* Darker panels #0F172A */
+    --popover-foreground: 220 13% 91%;
+
+    /* Primary gradient blue to purple */
+    --primary: 217 91% 60%;             /* Blue #3B82F6 */
+    --primary-foreground: 0 0% 100%;    /* Pure white */
+
+    /* Secondary muted grays */
+    --secondary: 215 28% 17%;           /* Slate #1E293B */
+    --secondary-foreground: 220 9% 68%; /* Muted grey #9CA3AF */
+
+    /* Muted elements */
+    --muted: 221 39% 11%;               /* #0F172A */
+    --muted-foreground: 220 9% 64%;     /* #9CA3AF */
+
+    /* Accent cyan */
+    --accent: 188 94% 43%;              /* Cyan #06B6D4 */
+    --accent-foreground: 221 39% 11%;
+
+    --destructive: 0 84% 60%;           /* Red #EF4444 */
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 28% 17%;              /* Subtle borders #1E293B */
+    --input: 215 28% 17%;               /* Input backgrounds */
+    --ring: 217 91% 60%;                /* Blue focus rings */
+
+    --radius: 0.5rem;
+    
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    --gradient-accent: linear-gradient(135deg, #06B6D4, #8B5CF6);
+    
+    /* Glassmorphism */
+    --glass-bg: rgba(16, 21, 34, 0.8);
+    --glass-border: rgba(229, 231, 235, 0.1);
+  }
+
+  /* Dark mode uses same colors as we're building a dark-first design */
+  .dark {
+    --background: 221 50% 6%;
+    --foreground: 220 13% 91%;
+    --card: 221 50% 8%;
+    --card-foreground: 220 13% 91%;
+    --popover: 221 39% 11%;
+    --popover-foreground: 220 13% 91%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 220 9% 68%;
+    --muted: 221 39% 11%;
+    --muted-foreground: 220 9% 64%;
+    --accent: 188 94% 43%;
+    --accent-foreground: 221 39% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background: hsl(var(--background));
+  }
+  
+  /* Custom gradient button classes */
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-gradient-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+  }
+  
+  /* Glassmorphism effect */
+  .glass-card {
+    background: rgba(16, 21, 34, 0.8);
+    border: 1px solid rgba(229, 231, 235, 0.1);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Hover lift animation */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+}
