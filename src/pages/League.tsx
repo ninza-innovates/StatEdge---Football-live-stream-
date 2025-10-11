@@ -468,13 +468,12 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                   </div>
                 )}
                 <Button 
-                  variant="outline" 
                   size="sm" 
-                  className="group ml-auto"
+                  className="group ml-auto bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
                   onClick={() => window.location.href = `/match/${fixture.id}`}
                 >
                   View Matchthread
-                  <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                  <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
                 </Button>
               </div>
             </div>
