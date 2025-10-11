@@ -120,6 +120,23 @@ const League = () => {
               </p>
             </div>
 
+            {/* Matchthread Notice Banner */}
+            <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-full bg-primary/20 flex-shrink-0">
+                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-sm mb-1">Live Matchthreads</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Matchthreads go live 24 hours before kick-off with the most up-to-date data, analysis, and AI insights.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Filters */}
             <div className="flex items-center gap-3 mb-6 flex-wrap">
               <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -443,12 +460,23 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                 </div>
               </div>
 
-              {fixture.venue && (
-                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground flex items-center gap-2">
-                  <span>📍</span>
-                  <span>{fixture.venue}</span>
-                </div>
-              )}
+              <div className="mt-4 pt-4 border-t flex items-center justify-between gap-4">
+                {fixture.venue && (
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <span>📍</span>
+                    <span>{fixture.venue}</span>
+                  </div>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="group ml-auto"
+                  onClick={() => window.location.href = `/match/${fixture.id}`}
+                >
+                  View Matchthread
+                  <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                </Button>
+              </div>
             </div>
           );
         })}
@@ -576,9 +604,207 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
 // Table Tab Component
 const TableTab = ({ leagueId }: { leagueId: number }) => {
+  const [standings, setStandings] = useState<any[]>([]);
+  const [teams, setTeams] = useState<Map<number, Team>>(new Map());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTableData = async () => {
+      try {
+        // Fetch teams
+        const { data: teamsData } = await supabase
+          .from("teams")
+          .select("*");
+
+        const teamsMap = new Map<number, Team>();
+        teamsData?.forEach((team) => {
+          teamsMap.set(team.id, team);
+        });
+        setTeams(teamsMap);
+
+        // Fetch fixtures for this league
+        const { data: fixturesData } = await supabase
+          .from("fixtures")
+          .select("*")
+          .eq("league_id", leagueId)
+          .not("goals", "is", null);
+
+        // Calculate standings
+        const standingsMap = new Map<number, any>();
+
+        fixturesData?.forEach((fixture) => {
+          const homeGoals = fixture.goals?.home ?? 0;
+          const awayGoals = fixture.goals?.away ?? 0;
+
+          // Initialize home team
+          if (!standingsMap.has(fixture.home_team_id)) {
+            standingsMap.set(fixture.home_team_id, {
+              teamId: fixture.home_team_id,
+              played: 0,
+              won: 0,
+              drawn: 0,
+              lost: 0,
+              goalsFor: 0,
+              goalsAgainst: 0,
+              goalDifference: 0,
+              points: 0,
+            });
+          }
+
+          // Initialize away team
+          if (!standingsMap.has(fixture.away_team_id)) {
+            standingsMap.set(fixture.away_team_id, {
+              teamId: fixture.away_team_id,
+              played: 0,
+              won: 0,
+              drawn: 0,
+              lost: 0,
+              goalsFor: 0,
+              goalsAgainst: 0,
+              goalDifference: 0,
+              points: 0,
+            });
+          }
+
+          const homeStats = standingsMap.get(fixture.home_team_id);
+          const awayStats = standingsMap.get(fixture.away_team_id);
+
+          // Update stats
+          homeStats.played++;
+          awayStats.played++;
+          homeStats.goalsFor += homeGoals;
+          homeStats.goalsAgainst += awayGoals;
+          awayStats.goalsFor += awayGoals;
+          awayStats.goalsAgainst += homeGoals;
+
+          if (homeGoals > awayGoals) {
+            homeStats.won++;
+            homeStats.points += 3;
+            awayStats.lost++;
+          } else if (homeGoals < awayGoals) {
+            awayStats.won++;
+            awayStats.points += 3;
+            homeStats.lost++;
+          } else {
+            homeStats.drawn++;
+            awayStats.drawn++;
+            homeStats.points += 1;
+            awayStats.points += 1;
+          }
+
+          homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
+          awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
+        });
+
+        const standingsArray = Array.from(standingsMap.values())
+          .sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            return b.goalsFor - a.goalsFor;
+          });
+
+        setStandings(standingsArray);
+      } catch (error) {
+        console.error("Error fetching table data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTableData();
+  }, [leagueId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(10)].map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="text-center py-12">
-      <p className="text-muted-foreground">League table coming soon...</p>
+    <div className="space-y-4">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border/50 text-sm text-muted-foreground">
+              <th className="text-left py-3 px-2 font-semibold">#</th>
+              <th className="text-left py-3 px-2 font-semibold">Team</th>
+              <th className="text-center py-3 px-2 font-semibold">P</th>
+              <th className="text-center py-3 px-2 font-semibold">W</th>
+              <th className="text-center py-3 px-2 font-semibold">D</th>
+              <th className="text-center py-3 px-2 font-semibold">L</th>
+              <th className="text-center py-3 px-2 font-semibold">GF</th>
+              <th className="text-center py-3 px-2 font-semibold">GA</th>
+              <th className="text-center py-3 px-2 font-semibold">GD</th>
+              <th className="text-center py-3 px-2 font-semibold">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {standings.map((standing, index) => {
+              const team = teams.get(standing.teamId);
+              return (
+                <tr
+                  key={standing.teamId}
+                  className={`border-b border-border/30 hover:bg-accent/50 transition-colors ${
+                    index < 4
+                      ? "bg-emerald-500/5"
+                      : index < 6
+                      ? "bg-blue-500/5"
+                      : index >= standings.length - 3
+                      ? "bg-red-500/5"
+                      : ""
+                  }`}
+                >
+                  <td className="py-3 px-2 text-sm font-medium">{index + 1}</td>
+                  <td className="py-3 px-2">
+                    <div className="flex items-center gap-2">
+                      {team?.logo && (
+                        <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
+                          <img
+                            src={team.logo}
+                            alt={team.name}
+                            className="h-full w-full object-contain"
+                          />
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">{team?.name || "Unknown"}</span>
+                    </div>
+                  </td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.played}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.won}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.drawn}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.lost}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.goalsFor}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.goalsAgainst}</td>
+                  <td className="text-center py-3 px-2 text-sm font-medium">
+                    {standing.goalDifference > 0 ? "+" : ""}
+                    {standing.goalDifference}
+                  </td>
+                  <td className="text-center py-3 px-2 text-sm font-bold">{standing.points}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded bg-emerald-500/20 border border-emerald-500/40"></div>
+          <span className="text-muted-foreground">Champions League</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded bg-blue-500/20 border border-blue-500/40"></div>
+          <span className="text-muted-foreground">Europa League</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded bg-red-500/20 border border-red-500/40"></div>
+          <span className="text-muted-foreground">Relegation</span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -904,9 +1130,109 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 
 // Top Scorers Tab Component
 const ScorersTab = ({ leagueId }: { leagueId: number }) => {
+  const [scorers, setScorers] = useState<any[]>([]);
+  const [teams, setTeams] = useState<Map<number, Team>>(new Map());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchScorersData = async () => {
+      try {
+        // Fetch teams
+        const { data: teamsData } = await supabase
+          .from("teams")
+          .select("*");
+
+        const teamsMap = new Map<number, Team>();
+        teamsData?.forEach((team) => {
+          teamsMap.set(team.id, team);
+        });
+        setTeams(teamsMap);
+
+        // Mock top scorers data (in a real app, this would come from API/database)
+        const mockScorers = [
+          { id: 1, name: "Erling Haaland", teamId: 33, goals: 27, assists: 5, matches: 29 },
+          { id: 2, name: "Mohamed Salah", teamId: 40, goals: 22, assists: 12, matches: 32 },
+          { id: 3, name: "Harry Kane", teamId: 47, goals: 20, assists: 3, matches: 31 },
+          { id: 4, name: "Ivan Toney", teamId: 55, goals: 19, assists: 4, matches: 28 },
+          { id: 5, name: "Ollie Watkins", teamId: 66, goals: 18, assists: 11, matches: 33 },
+          { id: 6, name: "Callum Wilson", teamId: 34, goals: 17, assists: 6, matches: 27 },
+          { id: 7, name: "Marcus Rashford", teamId: 33, goals: 16, assists: 5, matches: 30 },
+          { id: 8, name: "Alexander Isak", teamId: 34, goals: 15, assists: 2, matches: 29 },
+          { id: 9, name: "Gabriel Jesus", teamId: 42, goals: 14, assists: 8, matches: 28 },
+          { id: 10, name: "Darwin Núñez", teamId: 40, goals: 13, assists: 4, matches: 31 },
+        ];
+
+        setScorers(mockScorers);
+      } catch (error) {
+        console.error("Error fetching scorers data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchScorersData();
+  }, [leagueId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(10)].map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="text-center py-12">
-      <p className="text-muted-foreground">Top scorers data coming soon...</p>
+    <div className="space-y-4">
+      <div className="grid gap-3">
+        {scorers.map((scorer, index) => {
+          const team = teams.get(scorer.teamId);
+          return (
+            <div
+              key={scorer.id}
+              className="flex items-center gap-4 p-4 rounded-lg bg-card/50 backdrop-blur border border-border/50 hover:bg-accent/50 transition-colors"
+            >
+              <div className="text-2xl font-bold text-muted-foreground w-8">
+                {index + 1}
+              </div>
+
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <h3 className="font-semibold text-lg">{scorer.name}</h3>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {team?.logo && (
+                    <div className="h-4 w-4 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={team.logo}
+                        alt={team.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  )}
+                  <span>{team?.name || "Unknown"}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-primary">{scorer.goals}</div>
+                  <div className="text-xs text-muted-foreground">Goals</div>
+                </div>
+                <div>
+                  <div className="text-xl font-semibold">{scorer.assists}</div>
+                  <div className="text-xs text-muted-foreground">Assists</div>
+                </div>
+                <div>
+                  <div className="text-xl font-semibold">{scorer.matches}</div>
+                  <div className="text-xs text-muted-foreground">Matches</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
