@@ -66,7 +66,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50 bg-background/95 backdrop-blur-xl">
-      <SidebarHeader className="border-b border-border/50 p-6">
+      <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
           <img 
             src="/lovable-uploads/dd09e007-2423-4091-b113-8404a07c3b63.png" 
@@ -76,9 +76,9 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="overflow-hidden">
         {/* Main Navigation */}
-        <SidebarGroup className="px-3 py-4">
+        <SidebarGroup className="px-3 py-2">
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -86,7 +86,7 @@ export function AppSidebar() {
                   onClick={() => navigate('/dashboard')}
                   isActive={isActive('/dashboard')}
                   tooltip="Dashboard"
-                  className="h-11 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
+                  className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
                   <Home className="h-4 w-4" />
                   <span className="text-sm">Dashboard</span>
@@ -96,11 +96,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator className="my-4 bg-border/50" />
+        <SidebarSeparator className="my-2 bg-border/50" />
 
         {/* Leagues */}
-        <SidebarGroup className="px-3">
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Leagues</SidebarGroupLabel>
+        <SidebarGroup className="px-3 py-1">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">Leagues</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {loading ? (
@@ -114,12 +114,12 @@ export function AppSidebar() {
                       onClick={() => navigate(`/league/${league.slug}`)}
                       isActive={isActive(`/league/${league.slug}`)}
                       tooltip={league.name}
-                      className="h-11 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
+                      className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                     >
                       <img 
                         src={league.logo} 
                         alt={league.name}
-                        className="h-5 w-5 object-contain"
+                        className="h-4 w-4 object-contain"
                       />
                       <span className="truncate text-sm">{league.name}</span>
                     </SidebarMenuButton>
@@ -130,10 +130,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator className="my-4 bg-border/50" />
+        <SidebarSeparator className="my-2 bg-border/50" />
 
         {/* Additional Pages */}
-        <SidebarGroup className="px-3">
+        <SidebarGroup className="px-3 py-1">
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -141,7 +141,7 @@ export function AppSidebar() {
                   onClick={() => navigate('/favourites')}
                   isActive={isActive('/favourites')}
                   tooltip="Favourites"
-                  className="h-11 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
+                  className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
                   <Heart className="h-4 w-4" />
                   <span className="text-sm">Favourites</span>
@@ -152,7 +152,7 @@ export function AppSidebar() {
                   onClick={() => navigate('/account')}
                   isActive={isActive('/account')}
                   tooltip="Account"
-                  className="h-11 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
+                  className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
                   <User className="h-4 w-4" />
                   <span className="text-sm">Account</span>
@@ -163,7 +163,7 @@ export function AppSidebar() {
                   onClick={() => navigate('/support')}
                   isActive={isActive('/support')}
                   tooltip="Support"
-                  className="h-11 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
+                  className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
                   <HelpCircle className="h-4 w-4" />
                   <span className="text-sm">Support</span>
@@ -174,12 +174,12 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/50 p-4 bg-background/50">
-        <div className="space-y-3">
+      <SidebarFooter className="border-t border-border/50 p-3 bg-background/50">
+        <div className="space-y-2">
           {/* Profile Preview */}
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-primary/5 transition-all">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-purple-600/20 border border-primary/20">
-              <User className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-primary/5 transition-all">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-purple-600/20 border border-primary/20">
+              <User className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">
@@ -196,7 +196,7 @@ export function AppSidebar() {
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="w-full justify-start h-10 rounded-lg font-medium text-muted-foreground hover:text-foreground hover:bg-destructive/10 transition-all"
+            className="w-full justify-start h-9 rounded-lg font-medium text-muted-foreground hover:text-foreground hover:bg-destructive/10 transition-all"
           >
             <LogOut className="h-4 w-4 mr-2" />
             <span className="text-sm">Sign Out</span>
