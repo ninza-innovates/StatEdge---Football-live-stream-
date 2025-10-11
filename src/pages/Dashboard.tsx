@@ -4,45 +4,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, TrendingUp, Eye, Zap } from "lucide-react";
-
-interface UserStats {
-  total_matches_viewed: number;
-  total_favorites: number;
-  ai_insights_used: number;
-  ai_insights_limit: number;
-}
+import { Flame, Calendar, Heart, Eye, MapPin, Trophy } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { isSubscribed, subscriptionTier } = useSubscription();
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      fetchUserStats();
-    }
-  }, [user]);
-
-  const fetchUserStats = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_stats')
-        .select('total_matches_viewed, total_favorites, ai_insights_used, ai_insights_limit')
-        .eq('user_id', user?.id)
-        .maybeSingle();
-
-      if (error) throw error;
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -50,130 +20,249 @@ const Dashboard = () => {
         <AppSidebar />
         
         <SidebarInset className="flex-1">
-          {/* Header */}
+          {/* Header with Trigger */}
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-lg px-4 md:px-6">
             <SidebarTrigger />
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-            </div>
-            {isSubscribed && (
-              <Badge variant="default" className="bg-primary">
-                {subscriptionTier === 'monthly' ? 'Pro Monthly' : 'Pro Weekly'}
-              </Badge>
-            )}
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-4 md:p-6">
-            {/* Welcome Section */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-foreground mb-2">
-                Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
-              </h2>
-              <p className="text-muted-foreground">
-                Here's your activity overview and stats
-              </p>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-              {/* Matches Viewed */}
-              <Card className="glass-card hover-lift">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Matches Viewed
-                  </CardTitle>
-                  <Eye className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
-                    {loading ? "..." : stats?.total_matches_viewed || 0}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Favorites */}
-              <Card className="glass-card hover-lift">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Favorite Matches
-                  </CardTitle>
-                  <Trophy className="h-4 w-4 text-accent" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
-                    {loading ? "..." : stats?.total_favorites || 0}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* AI Insights Used */}
-              <Card className="glass-card hover-lift">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    AI Insights Used
-                  </CardTitle>
-                  <Zap className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
-                    {loading ? "..." : `${stats?.ai_insights_used || 0} / ${stats?.ai_insights_limit || 0}`}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Subscription Status */}
-              <Card className="glass-card hover-lift">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Subscription
-                  </CardTitle>
-                  <TrendingUp className="h-4 w-4 text-accent" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
-                    {isSubscribed ? "Active" : "Free"}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-foreground">Quick Start</CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Get started by exploring leagues in the sidebar
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                      <Trophy className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">Browse Leagues</p>
-                      <p className="text-xs text-muted-foreground">
-                        Select a league from the sidebar to view today's matches
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-                      <Zap className="h-4 w-4 text-accent" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">Get AI Insights</p>
-                      <p className="text-xs text-muted-foreground">
-                        Click on any match to view detailed AI-powered analysis
-                      </p>
-                    </div>
-                  </div>
+          <main className="flex-1 p-4 md:p-6 space-y-6">
+            {/* Welcome Hero Banner */}
+            <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-primary/20 via-purple-600/20 to-primary/20 p-6 md:p-8 border border-primary/30">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                    Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''} 👋
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Your AI insights for today are ready.
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+                <Button variant="hero" size="lg" className="shrink-0">
+                  View Today's Matches
+                </Button>
+              </div>
+            </div>
+
+            {/* Filters Section */}
+            <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+              {/* Date Filter */}
+              <Select defaultValue="today">
+                <SelectTrigger className="w-full md:w-[140px] bg-card border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* League Filter */}
+              <Select defaultValue="all">
+                <SelectTrigger className="w-full md:w-[160px] bg-card border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Leagues</SelectItem>
+                  <SelectItem value="premier-league">Premier League</SelectItem>
+                  <SelectItem value="la-liga">La Liga</SelectItem>
+                  <SelectItem value="bundesliga">Bundesliga</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Search */}
+              <div className="flex-1 w-full md:max-w-md">
+                <Input 
+                  placeholder="Search teams..." 
+                  className="bg-card border-border"
+                />
+              </div>
+
+              {/* All / Favourites Tabs */}
+              <div className="flex gap-2 ml-auto">
+                <Button variant="hero" size="sm">
+                  All
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Heart className="h-4 w-4" />
+                  Favourites
+                </Button>
+              </div>
+            </div>
+
+            {/* Featured Insights */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-1 w-8 bg-primary rounded"></div>
+                <h2 className="text-xl font-bold text-foreground">Featured Insights</h2>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {/* Match Card 1 */}
+                <Card className="glass-card hover-lift p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                    <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/30">
+                      Classic Rivalry
+                    </Badge>
+                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 ml-auto">
+                      100°C
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-foreground mb-2">Chelsea vs Liverpool</h3>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3 w-3" />
+                        <span>Oct 4 at 16:30</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3 w-3" />
+                        <span>Stamford Bridge</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-3 w-3" />
+                        <span>Premier League</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className="h-5 w-5 rounded-full bg-blue-600"></div>
+                        <span className="text-foreground font-medium">Chelsea</span>
+                      </div>
+                      <span className="text-muted-foreground">vs</span>
+                      <div className="flex items-center gap-1">
+                        <div className="h-5 w-5 rounded-full bg-red-600"></div>
+                        <span className="text-foreground font-medium">Liverpool</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button variant="hero" className="w-full" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Match
+                  </Button>
+                </Card>
+
+                {/* Match Card 2 */}
+                <Card className="glass-card hover-lift p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                      Big Match
+                    </Badge>
+                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 ml-auto">
+                      100°C
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-foreground mb-2">Real Madrid vs Villarreal</h3>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3 w-3" />
+                        <span>Oct 4 at 19:00</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3 w-3" />
+                        <span>Estadio Santiago Bernabéu</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-3 w-3" />
+                        <span>La Liga</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className="h-5 w-5 rounded-full bg-white"></div>
+                        <span className="text-foreground font-medium">Real Madrid</span>
+                      </div>
+                      <span className="text-muted-foreground">vs</span>
+                      <div className="flex items-center gap-1">
+                        <div className="h-5 w-5 rounded-full bg-yellow-500"></div>
+                        <span className="text-foreground font-medium">Villarreal</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button variant="outline" className="w-full" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Match
+                  </Button>
+                </Card>
+
+                {/* Match Card 3 */}
+                <Card className="glass-card hover-lift p-5 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                      Big Match
+                    </Badge>
+                    <Badge className="bg-orange-400/20 text-orange-300 border-orange-400/30 ml-auto">
+                      90°C
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-foreground mb-2">Arsenal vs West Ham</h3>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3 w-3" />
+                        <span>Oct 4 at 14:00</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3 w-3" />
+                        <span>Emirates Stadium</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Trophy className="h-3 w-3" />
+                        <span>Premier League</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className="h-5 w-5 rounded-full bg-red-500"></div>
+                        <span className="text-foreground font-medium">Arsenal</span>
+                      </div>
+                      <span className="text-muted-foreground">vs</span>
+                      <div className="flex items-center gap-1">
+                        <div className="h-5 w-5 rounded-full bg-purple-900"></div>
+                        <span className="text-foreground font-medium">West Ham</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button variant="outline" className="w-full" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Match
+                  </Button>
+                </Card>
+              </div>
+            </div>
+
+            {/* Today's Fixtures */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-1 w-8 bg-primary rounded"></div>
+                <h2 className="text-xl font-bold text-foreground">Today's Fixtures</h2>
+              </div>
+
+              <Card className="glass-card p-12 flex flex-col items-center justify-center text-center min-h-[300px]">
+                <Calendar className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
+                <p className="text-muted-foreground">No matches found for the selected filters</p>
+              </Card>
+            </div>
           </main>
         </SidebarInset>
       </div>
