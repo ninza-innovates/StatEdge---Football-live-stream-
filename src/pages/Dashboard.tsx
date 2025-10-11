@@ -193,7 +193,7 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <Button variant="outline" className="w-full" size="sm">
+                  <Button variant="hero" className="w-full" size="sm">
                     <Eye className="h-4 w-4 mr-2" />
                     View Match
                   </Button>
@@ -243,7 +243,7 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <Button variant="outline" className="w-full" size="sm">
+                  <Button variant="hero" className="w-full" size="sm">
                     <Eye className="h-4 w-4 mr-2" />
                     View Match
                   </Button>
