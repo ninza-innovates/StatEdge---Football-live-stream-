@@ -33,7 +33,7 @@ interface Team {
 
 const League = () => {
   const { slug } = useParams();
-  const [activeTab, setActiveTab] = useState<TabType>("form");
+  const [activeTab, setActiveTab] = useState<TabType>("fixtures");
   const [league, setLeague] = useState<League | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
