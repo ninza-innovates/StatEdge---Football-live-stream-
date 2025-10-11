@@ -10,6 +10,7 @@ import League from "./pages/League";
 import Favourites from "./pages/Favourites";
 import Account from "./pages/Account";
 import Support from "./pages/Support";
+import MatchThread from "./pages/MatchThread";
 
 const App = () => {
   return (
@@ -56,6 +57,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Support />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/match/:slug" 
+              element={
+                <ProtectedRoute>
+                  <MatchThread />
                 </ProtectedRoute>
               } 
             />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import PricingModal from "@/components/PricingModal";
+import { generateMatchSlug } from "@/utils/matchSlug";
 
 type TabType = "fixtures" | "table" | "form" | "scorers";
 
@@ -235,6 +236,7 @@ const League = () => {
 const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTab: (tab: TabType) => void }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { isSubscribed, loading: subscriptionLoading } = useSubscription();
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
@@ -579,7 +581,12 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                     <Button 
                       size="sm" 
                       className="group bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
-                      onClick={() => window.location.href = `/match/${fixture.id}`}
+                      onClick={() => {
+                        if (homeTeam && awayTeam) {
+                          const matchSlug = generateMatchSlug(homeTeam.name, awayTeam.name);
+                          navigate(`/match/${matchSlug}`);
+                        }
+                      }}
                     >
                       View Matchthread
                       <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
