@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import League from "./pages/League";
+import Favourites from "./pages/Favourites";
+import Account from "./pages/Account";
+import Support from "./pages/Support";
 
 const App = () => {
   return (
@@ -29,6 +32,30 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <League />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/favourites" 
+              element={
+                <ProtectedRoute>
+                  <Favourites />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/account" 
+              element={
+                <ProtectedRoute>
+                  <Account />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/support" 
+              element={
+                <ProtectedRoute>
+                  <Support />
                 </ProtectedRoute>
               } 
             />

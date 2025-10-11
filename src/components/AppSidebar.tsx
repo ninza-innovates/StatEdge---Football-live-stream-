@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, LogOut, Trophy, User } from "lucide-react";
+import { Home, LogOut, Trophy, User, Heart, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -125,6 +125,46 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 ))
               )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Additional Pages */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate('/favourites')}
+                  isActive={isActive('/favourites')}
+                  tooltip="Favourites"
+                >
+                  <Heart className="h-4 w-4" />
+                  <span>Favourites</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate('/account')}
+                  isActive={isActive('/account')}
+                  tooltip="Account"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Account</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => navigate('/support')}
+                  isActive={isActive('/support')}
+                  tooltip="Support"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Support</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
