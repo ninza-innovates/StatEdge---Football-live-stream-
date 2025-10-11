@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { Grid, List, Search, Trophy, Heart } from "lucide-react";
+import { Grid, List, Search, Trophy, Heart, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import PricingModal from "@/components/PricingModal";
 
 type TabType = "fixtures" | "table" | "form" | "scorers";
 
@@ -233,10 +235,12 @@ const League = () => {
 const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTab: (tab: TabType) => void }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isSubscribed, loading: subscriptionLoading } = useSubscription();
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFixtures();
@@ -571,20 +575,35 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                       className={`h-5 w-5 ${favorites.has(fixture.id) ? 'fill-current' : ''}`}
                     />
                   </Button>
-                  <Button 
-                    size="sm" 
-                    className="group bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
-                    onClick={() => window.location.href = `/match/${fixture.id}`}
-                  >
-                    View Matchthread
-                    <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
-                  </Button>
+                  {isSubscribed ? (
+                    <Button 
+                      size="sm" 
+                      className="group bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
+                      onClick={() => window.location.href = `/match/${fixture.id}`}
+                    >
+                      View Matchthread
+                      <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="group font-semibold"
+                      onClick={() => setPricingModalOpen(true)}
+                    >
+                      <Lock className="h-4 w-4 mr-2" />
+                      View Matchthread
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Pricing Modal */}
+      <PricingModal open={pricingModalOpen} onOpenChange={setPricingModalOpen} />
 
       {/* Sidebar - Right side (1/3) */}
       <div className="space-y-6">
