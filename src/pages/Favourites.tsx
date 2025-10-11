@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -132,93 +134,103 @@ export default function Favourites() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Heart className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">My Favourites</h1>
-        </div>
+    <SidebarProvider defaultOpen>
+      <div className="flex min-h-screen w-full bg-background">
+        <AppSidebar />
+        
+        <SidebarInset className="flex-1">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-lg px-4 md:px-6">
+            <SidebarTrigger />
+          </header>
 
-        {loading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading favourites...</div>
-        ) : favourites.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-semibold mb-2">No favourites yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Start adding matches to your favourites to see them here
-              </p>
-              <Button onClick={() => navigate('/dashboard')}>
-                Browse Matches
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {favourites.map((fav) => (
-              <Card key={fav.id} className="hover:border-primary/50 transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">{fav.fixture.league.name}</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFavourite(fav.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Heart className="h-4 w-4 fill-current" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="flex items-center gap-2 flex-1">
-                        <img 
-                          src={fav.fixture.home_team.logo} 
-                          alt={fav.fixture.home_team.name}
-                          className="h-8 w-8 object-contain"
-                        />
-                        <span className="font-semibold">{fav.fixture.home_team.name}</span>
-                      </div>
-                      
-                      <div className="text-center px-4">
-                        {fav.fixture.status === 'FT' && fav.fixture.goals ? (
-                          <div className="text-2xl font-bold">
-                            {fav.fixture.goals.home} - {fav.fixture.goals.away}
-                          </div>
-                        ) : (
-                          <Badge>{fav.fixture.status}</Badge>
-                        )}
-                      </div>
+          <main className="flex-1 p-4 md:p-6 space-y-6">
+            <div className="flex items-center gap-3">
+              <Heart className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold">My Favourites</h1>
+            </div>
 
-                      <div className="flex items-center gap-2 flex-1 justify-end">
-                        <span className="font-semibold">{fav.fixture.away_team.name}</span>
-                        <img 
-                          src={fav.fixture.away_team.logo} 
-                          alt={fav.fixture.away_team.name}
-                          className="h-8 w-8 object-contain"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{formatDate(fav.fixture.date)}</span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => navigate(`/match/${fav.fixture_id}`)}
-                    >
-                      View Match
-                    </Button>
-                  </div>
+            {loading ? (
+              <div className="text-center py-12 text-muted-foreground">Loading favourites...</div>
+            ) : favourites.length === 0 ? (
+              <Card className="glass-card">
+                <CardContent className="py-12 text-center">
+                  <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-semibold mb-2">No favourites yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start adding matches to your favourites to see them here
+                  </p>
+                  <Button variant="hero" onClick={() => navigate('/dashboard')}>
+                    Browse Matches
+                  </Button>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="grid gap-4">
+                {favourites.map((fav) => (
+                  <Card key={fav.id} className="glass-card hover-lift">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">{fav.fixture.league.name}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFavourite(fav.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Heart className="h-4 w-4 fill-current" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="flex items-center gap-2 flex-1">
+                            <img 
+                              src={fav.fixture.home_team.logo} 
+                              alt={fav.fixture.home_team.name}
+                              className="h-8 w-8 object-contain"
+                            />
+                            <span className="font-semibold">{fav.fixture.home_team.name}</span>
+                          </div>
+                          
+                          <div className="text-center px-4">
+                            {fav.fixture.status === 'FT' && fav.fixture.goals ? (
+                              <div className="text-2xl font-bold">
+                                {fav.fixture.goals.home} - {fav.fixture.goals.away}
+                              </div>
+                            ) : (
+                              <Badge>{fav.fixture.status}</Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-1 justify-end">
+                            <span className="font-semibold">{fav.fixture.away_team.name}</span>
+                            <img 
+                              src={fav.fixture.away_team.logo} 
+                              alt={fav.fixture.away_team.name}
+                              className="h-8 w-8 object-contain"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+                        <span>{formatDate(fav.fixture.date)}</span>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate(`/match/${fav.fixture_id}`)}
+                        >
+                          View Match
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
