@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import League from "./pages/League";
 
 const App = () => {
   return (
@@ -20,6 +21,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/league/:slug" 
+              element={
+                <ProtectedRoute>
+                  <League />
                 </ProtectedRoute>
               } 
             />
