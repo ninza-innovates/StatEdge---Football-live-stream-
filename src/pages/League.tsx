@@ -239,11 +239,13 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
   const fetchFixtures = async () => {
     try {
-      // Fetch upcoming fixtures for this league
+      // Fetch upcoming fixtures (NS = Not Started) for this league
       const { data: fixturesData, error: fixturesError } = await supabase
         .from("fixtures")
         .select("*, goals")
         .eq("league_id", leagueId)
+        .eq("status", "NS")
+        .gte("date", new Date().toISOString())
         .order("date", { ascending: true })
         .limit(4);
 
@@ -434,7 +436,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
                 {/* Score or VS */}
                 <div className="flex items-center justify-center min-w-[80px]">
-                  {hasScore ? (
+                  {fixture.status === 'FT' && hasScore ? (
                     <div className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
                       {fixture.goals.home} - {fixture.goals.away}
                     </div>
