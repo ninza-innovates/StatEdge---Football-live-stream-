@@ -46,10 +46,17 @@ const Header = () => {
 
         {/* CTA Buttons */}
         <div className="flex items-center space-x-4">
-          <Button variant="ghost">
+          <Button 
+            variant="ghost"
+            onClick={() => window.location.href = '/auth'}
+          >
             Login
           </Button>
-          <Button variant="heroCta" className="hidden md:inline-flex">
+          <Button 
+            variant="heroCta" 
+            className="hidden md:inline-flex"
+            onClick={() => window.location.href = '/auth'}
+          >
             Get Started
           </Button>
         </div>
