@@ -16,8 +16,10 @@ import { TacticalAnalysis } from "@/components/matchthread/TacticalAnalysis";
 import { AdvancedInsights } from "@/components/matchthread/AdvancedInsights";
 import { LineupsSection } from "@/components/matchthread/LineupsSection";
 import { BettingInsights } from "@/components/matchthread/BettingInsights";
+import { QuickNav } from "@/components/matchthread/QuickNav";
 import { generateMatchTitle } from "@/utils/matchSlug";
 import PricingModal from "@/components/PricingModal";
+import { Sparkles, BarChart3, Target, TrendingUp, Users, DollarSign } from "lucide-react";
 
 interface Fixture {
   id: number;
@@ -209,6 +211,16 @@ const MatchThread = () => {
   const metaTitle = generateMatchTitle(homeTeam.name, awayTeam.name);
   const metaDescription = `Live match thread for ${metaTitle}. Get AI-powered analysis, tactical insights, and betting predictions.`;
 
+  const quickNavSections = [
+    { id: "teams", label: "Teams", icon: <Users className="h-4 w-4" /> },
+    { id: "ai-summary", label: "AI Analysis", icon: <Sparkles className="h-4 w-4" /> },
+    { id: "stats", label: "Stats", icon: <BarChart3 className="h-4 w-4" /> },
+    { id: "tactical", label: "Tactics", icon: <Target className="h-4 w-4" /> },
+    { id: "insights", label: "Insights", icon: <TrendingUp className="h-4 w-4" /> },
+    { id: "lineups", label: "Lineups", icon: <Users className="h-4 w-4" /> },
+    { id: "betting", label: "Betting", icon: <DollarSign className="h-4 w-4" /> },
+  ];
+
   return (
     <>
       <Helmet>
@@ -247,52 +259,69 @@ const MatchThread = () => {
                 status={fixture.status}
               />
 
+              {/* Quick Navigation */}
+              <QuickNav sections={quickNavSections} />
+
               {/* Main Content */}
-              <div className="max-w-7xl mx-auto px-6 space-y-6">
+              <div className="max-w-7xl mx-auto px-6 space-y-6 mt-6">
                 {/* Teams Comparison */}
-                <TeamsComparison 
-                  homeTeam={homeTeam}
-                  awayTeam={awayTeam}
-                  keyStats={aiSummary?.key_stats}
-                />
+                <div id="teams">
+                  <TeamsComparison 
+                    homeTeam={homeTeam}
+                    awayTeam={awayTeam}
+                    keyStats={aiSummary?.key_stats}
+                  />
+                </div>
 
                 {/* AI Summary Card */}
                 {aiSummary && (
-                  <AISummaryCard 
-                    quickSummary={aiSummary.quick_summary}
-                    advancedSummary={aiSummary.advanced_summary}
-                    confidence={aiSummary.confidence}
-                    model={aiSummary.model}
-                  />
+                  <div id="ai-summary">
+                    <AISummaryCard 
+                      quickSummary={aiSummary.quick_summary}
+                      advancedSummary={aiSummary.advanced_summary}
+                      confidence={aiSummary.confidence}
+                      model={aiSummary.model}
+                    />
+                  </div>
                 )}
 
                 {/* Stats Comparison */}
                 {aiSummary?.key_stats && (
-                  <StatsComparison keyStats={aiSummary.key_stats} />
+                  <div id="stats">
+                    <StatsComparison keyStats={aiSummary.key_stats} />
+                  </div>
                 )}
 
                 {/* Tactical Analysis */}
                 {aiSummary?.tactical_analysis && (
-                  <TacticalAnalysis analysis={aiSummary.tactical_analysis} />
+                  <div id="tactical">
+                    <TacticalAnalysis analysis={aiSummary.tactical_analysis} />
+                  </div>
                 )}
 
                 {/* Advanced Insights */}
                 {aiSummary?.advanced_insights && (
-                  <AdvancedInsights insights={aiSummary.advanced_insights} />
+                  <div id="insights">
+                    <AdvancedInsights insights={aiSummary.advanced_insights} />
+                  </div>
                 )}
 
                 {/* Lineups & Injuries */}
                 {aiSummary?.lineups_injuries && (
-                  <LineupsSection 
-                    lineupsData={aiSummary.lineups_injuries}
-                    homeTeam={homeTeam.name}
-                    awayTeam={awayTeam.name}
-                  />
+                  <div id="lineups">
+                    <LineupsSection 
+                      lineupsData={aiSummary.lineups_injuries}
+                      homeTeam={homeTeam.name}
+                      awayTeam={awayTeam.name}
+                    />
+                  </div>
                 )}
 
                 {/* Betting Insights */}
                 {aiSummary?.potential_bets && (
-                  <BettingInsights bets={aiSummary.potential_bets} />
+                  <div id="betting">
+                    <BettingInsights bets={aiSummary.potential_bets} />
+                  </div>
                 )}
 
                 {/* No AI Summary Message */}
