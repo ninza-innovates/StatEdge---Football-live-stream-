@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, LogOut, Trophy, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Sidebar,
   SidebarContent,
@@ -30,7 +31,8 @@ interface League {
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { subscriptionTier } = useSubscription();
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -128,16 +130,34 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="w-full justify-start"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          <span>Logout</span>
-        </Button>
+      <SidebarFooter className="border-t border-border p-4">
+        <div className="space-y-3">
+          {/* Profile Preview */}
+          <div className="flex items-center gap-3 px-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {user?.email || 'User'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {subscriptionTier ? `${subscriptionTier} Plan` : 'Free Plan'}
+              </p>
+            </div>
+          </div>
+          
+          {/* Sign Out Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            <span>Sign Out</span>
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
