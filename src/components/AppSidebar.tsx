@@ -69,10 +69,18 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
           <img 
-            src="/lovable-uploads/dd09e007-2423-4091-b113-8404a07c3b63.png" 
-            alt="StatEdge.ai" 
-            className="h-10 w-auto transition-transform hover:scale-105"
+            src="/favicon.ico" 
+            alt="StatEdge.ai Logo" 
+            className="h-8 w-8 flex-shrink-0"
           />
+          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+            <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+              StatEdge.ai
+            </h1>
+            <p className="text-xs text-muted-foreground font-medium">
+              AI Football Insights
+            </p>
+          </div>
         </div>
       </SidebarHeader>
 
