@@ -212,9 +212,344 @@ const League = () => {
 
 // Fixtures Tab Component
 const FixturesTab = ({ leagueId }: { leagueId: number }) => {
+  const [fixtures, setFixtures] = useState<any[]>([]);
+  const [teams, setTeams] = useState<Map<number, Team>>(new Map());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFixtures();
+  }, [leagueId]);
+
+  const fetchFixtures = async () => {
+    try {
+      // Fetch upcoming fixtures for this league
+      const { data: fixturesData, error: fixturesError } = await supabase
+        .from("fixtures")
+        .select("*, goals")
+        .eq("league_id", leagueId)
+        .order("date", { ascending: true })
+        .limit(4);
+
+      if (fixturesError) throw fixturesError;
+
+      // Fetch all teams
+      const { data: teamsData, error: teamsError } = await supabase
+        .from("teams")
+        .select("*");
+
+      if (teamsError) throw teamsError;
+
+      // Create a map of teams for quick lookup
+      const teamsMap = new Map<number, Team>();
+      teamsData?.forEach(team => {
+        teamsMap.set(team.id, team);
+      });
+
+      setTeams(teamsMap);
+      setFixtures(fixturesData || []);
+    } catch (error) {
+      console.error("Error fetching fixtures:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate team stats from all fixtures for sidebar
+  const calculateTeamStats = () => {
+    const teamStats = new Map<number, any>();
+
+    fixtures.forEach(fixture => {
+      if (!fixture.goals) return;
+
+      const homeTeamId = fixture.home_team_id;
+      const awayTeamId = fixture.away_team_id;
+      const homeGoals = fixture.goals.home;
+      const awayGoals = fixture.goals.away;
+
+      // Initialize stats if needed
+      if (!teamStats.has(homeTeamId)) {
+        teamStats.set(homeTeamId, {
+          id: homeTeamId,
+          matches: [],
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          points: 0,
+        });
+      }
+      if (!teamStats.has(awayTeamId)) {
+        teamStats.set(awayTeamId, {
+          id: awayTeamId,
+          matches: [],
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          points: 0,
+        });
+      }
+
+      const homeStats = teamStats.get(homeTeamId);
+      const awayStats = teamStats.get(awayTeamId);
+
+      // Update goals
+      homeStats.goalsFor += homeGoals;
+      homeStats.goalsAgainst += awayGoals;
+      awayStats.goalsFor += awayGoals;
+      awayStats.goalsAgainst += homeGoals;
+
+      // Update results
+      if (homeGoals > awayGoals) {
+        homeStats.wins++;
+        homeStats.points += 3;
+        awayStats.losses++;
+      } else if (homeGoals < awayGoals) {
+        awayStats.wins++;
+        awayStats.points += 3;
+        homeStats.losses++;
+      } else {
+        homeStats.draws++;
+        awayStats.draws++;
+        homeStats.points += 1;
+        awayStats.points += 1;
+      }
+
+      // Add match to history (limit to last 5)
+      homeStats.matches.unshift({
+        date: fixture.date,
+        result: homeGoals > awayGoals ? "W" : homeGoals < awayGoals ? "L" : "D",
+      });
+
+      awayStats.matches.unshift({
+        date: fixture.date,
+        result: awayGoals > homeGoals ? "W" : awayGoals < homeGoals ? "L" : "D",
+      });
+    });
+
+    // Convert to array and sort by points
+    const statsArray = Array.from(teamStats.values())
+      .map(stat => ({
+        ...stat,
+        matches: stat.matches.slice(0, 5),
+        goalDiff: stat.goalsFor - stat.goalsAgainst,
+        form: stat.matches.slice(0, 5).map((m: any) => m.result),
+      }))
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+        return b.goalsFor - a.goalsFor;
+      })
+      .slice(0, 10);
+
+    return statsArray;
+  };
+
+  if (loading) {
+    return <Skeleton className="h-96 w-full" />;
+  }
+
+  if (fixtures.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No fixtures available for this league yet.</p>
+      </div>
+    );
+  }
+
+  const topTeams = calculateTeamStats();
+
   return (
-    <div className="text-center py-12">
-      <p className="text-muted-foreground">Fixtures coming soon...</p>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Fixtures List - Left side (2/3) */}
+      <div className="lg:col-span-2 space-y-4">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="h-8 w-1 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+          <h2 className="text-2xl font-bold">Upcoming Fixtures</h2>
+        </div>
+
+        {fixtures.map((fixture) => {
+          const homeTeam = teams.get(fixture.home_team_id);
+          const awayTeam = teams.get(fixture.away_team_id);
+          const fixtureDate = new Date(fixture.date);
+          const hasScore = fixture.goals && (fixture.goals.home !== null || fixture.goals.away !== null);
+
+          return (
+            <div
+              key={fixture.id}
+              className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground font-medium">
+                  {fixtureDate.toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </div>
+                <div className="text-sm font-medium">
+                  {fixtureDate.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-center">
+                {/* Home Team */}
+                <div className="flex items-center gap-4 justify-end">
+                  <div className="text-right">
+                    <h3 className="text-lg font-bold">{homeTeam?.name || "Unknown"}</h3>
+                  </div>
+                  {homeTeam?.logo && (
+                    <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={homeTeam.logo}
+                        alt={homeTeam.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Score or VS */}
+                <div className="flex items-center justify-center min-w-[80px]">
+                  {hasScore ? (
+                    <div className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
+                      {fixture.goals.home} - {fixture.goals.away}
+                    </div>
+                  ) : (
+                    <div className="text-lg font-semibold text-muted-foreground">VS</div>
+                  )}
+                </div>
+
+                {/* Away Team */}
+                <div className="flex items-center gap-4">
+                  {awayTeam?.logo && (
+                    <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={awayTeam.logo}
+                        alt={awayTeam.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-lg font-bold">{awayTeam?.name || "Unknown"}</h3>
+                  </div>
+                </div>
+              </div>
+
+              {fixture.venue && (
+                <div className="mt-4 pt-4 border-t text-sm text-muted-foreground flex items-center gap-2">
+                  <span>📍</span>
+                  <span>{fixture.venue}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Sidebar - Right side (1/3) */}
+      <div className="space-y-6">
+        {/* League Table */}
+        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 sticky top-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Trophy className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-bold">League Table</h2>
+          </div>
+
+          <div className="space-y-1">
+            {topTeams.slice(0, 6).map((team, idx) => {
+              const teamData = teams.get(team.id);
+              const isTopFour = idx < 4;
+              
+              return (
+                <div
+                  key={team.id}
+                  className={`flex items-center gap-3 py-3 px-3 rounded-lg transition-all hover:bg-accent/50 ${
+                    isTopFour ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <div
+                    className={`flex items-center justify-center h-6 w-6 rounded text-xs font-bold ${
+                      isTopFour
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {idx + 1}
+                  </div>
+                  {teamData?.logo && (
+                    <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center">
+                      <img
+                        src={teamData.logo}
+                        alt={teamData.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  )}
+                  <span className="flex-1 text-sm font-medium truncate">
+                    {teamData?.name || "Unknown"}
+                  </span>
+                  <span className="text-sm font-bold">{team.points}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* League Form */}
+        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="h-5 w-1 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+            <h2 className="text-lg font-bold">League Form</h2>
+          </div>
+
+          <div className="space-y-3">
+            {topTeams.slice(0, 5).map((team) => {
+              const teamData = teams.get(team.id);
+              
+              return (
+                <div key={team.id} className="flex items-center gap-3">
+                  {teamData?.logo && (
+                    <div className="h-8 w-8 rounded bg-background/50 p-1 flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={teamData.logo}
+                        alt={teamData.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{teamData?.name || "Unknown"}</div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {team.form.map((result: string, formIdx: number) => (
+                      <div
+                        key={formIdx}
+                        className={`h-6 w-6 rounded text-[10px] font-bold flex items-center justify-center ${
+                          result === "W"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : result === "D"
+                            ? "bg-amber-500/20 text-amber-400"
+                            : "bg-red-500/20 text-red-400"
+                        }`}
+                      >
+                        {result}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
