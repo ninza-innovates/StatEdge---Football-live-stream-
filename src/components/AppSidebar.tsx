@@ -79,7 +79,6 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup className="px-3 py-4">
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
