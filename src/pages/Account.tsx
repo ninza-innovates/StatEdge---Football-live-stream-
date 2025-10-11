@@ -252,109 +252,44 @@ export default function Account() {
                   <CreditCard className="h-5 w-5" />
                   Billing & Subscription
                 </CardTitle>
-                <CardDescription>Manage your subscription and billing details</CardDescription>
+                <CardDescription>Manage your subscription and billing</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-                  <div className="space-y-1">
-                    <p className="font-semibold">Current Plan</p>
-                    <p className="text-2xl font-bold text-primary">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Current Plan</p>
+                    <p className="text-xl font-semibold">
                       {subscriptionTier ? `${subscriptionTier} Plan` : 'Free Plan'}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {isSubscribed 
-                        ? 'Active subscription with full access' 
-                        : 'Limited access to AI insights'}
-                    </p>
                   </div>
-                  <Badge variant={isSubscribed ? "default" : "secondary"} className="text-lg px-4 py-2">
+                  <Badge variant={isSubscribed ? "default" : "secondary"}>
                     {isSubscribed ? 'Active' : 'Free'}
                   </Badge>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-3">
-                  {isSubscribed ? (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-between"
-                        onClick={handleManageBilling}
-                        disabled={processingBilling}
-                      >
-                        <span className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          Manage Subscription
-                        </span>
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center">
-                        Update payment method, view invoices, or cancel subscription
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <Button 
-                        variant="hero" 
-                        className="w-full"
-                        onClick={handleUpgrade}
-                        disabled={processingBilling}
-                      >
-                        Upgrade to Premium
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center">
-                        Get unlimited AI insights and premium features
-                      </p>
-                    </>
-                  )}
-                </div>
-
-                {isSubscribed && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">Your Benefits</h4>
-                      <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                          Unlimited AI match insights
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                          Advanced analytics and predictions
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                          Priority support
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                          Early access to new features
-                        </li>
-                      </ul>
-                    </div>
-                  </>
+                {isSubscribed ? (
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleManageBilling}
+                    disabled={processingBilling}
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Manage Subscription
+                    <ExternalLink className="h-4 w-4 ml-auto" />
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="hero" 
+                    className="w-full"
+                    onClick={handleUpgrade}
+                    disabled={processingBilling}
+                  >
+                    Upgrade to Premium
+                  </Button>
                 )}
               </CardContent>
             </Card>
-
-            {/* Upgrade CTA for Free Users */}
-            {!isSubscribed && (
-              <Card className="glass-card border-primary/50 bg-gradient-to-br from-primary/5 to-primary/10">
-                <CardHeader>
-                  <CardTitle>Unlock Premium Features</CardTitle>
-                  <CardDescription>
-                    Get unlimited AI insights, advanced analytics, and exclusive features
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="hero" className="w-full md:w-auto" onClick={handleUpgrade} disabled={processingBilling}>
-                    Upgrade Now
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
           </main>
         </SidebarInset>
       </div>
