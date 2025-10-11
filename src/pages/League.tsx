@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { Grid, List, Search, Trophy } from "lucide-react";
+import { Grid, List, Search, Trophy, Heart } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 type TabType = "fixtures" | "table" | "form" | "scorers";
 
@@ -229,13 +231,19 @@ const League = () => {
 
 // Fixtures Tab Component
 const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTab: (tab: TabType) => void }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchFixtures();
-  }, [leagueId]);
+    if (user) {
+      fetchFavorites();
+    }
+  }, [leagueId, user]);
 
   const fetchFixtures = async () => {
     try {
@@ -270,6 +278,85 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
       console.error("Error fetching fixtures:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFavorites = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('fixture_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const favoriteIds = new Set(data?.map(f => f.fixture_id) || []);
+      setFavorites(favoriteIds);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (fixtureId: number) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to add favorites",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const isFavorited = favorites.has(fixtureId);
+
+    try {
+      if (isFavorited) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('fixture_id', fixtureId);
+
+        if (error) throw error;
+
+        setFavorites(prev => {
+          const newFavorites = new Set(prev);
+          newFavorites.delete(fixtureId);
+          return newFavorites;
+        });
+
+        toast({
+          title: "Removed from favorites",
+          description: "Match removed from your favorites",
+        });
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert({
+            user_id: user.id,
+            fixture_id: fixtureId,
+          });
+
+        if (error) throw error;
+
+        setFavorites(prev => new Set(prev).add(fixtureId));
+
+        toast({
+          title: "Added to favorites",
+          description: "Match added to your favorites",
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+      });
     }
   };
 
@@ -469,14 +556,30 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                     <span>{fixture.venue}</span>
                   </div>
                 )}
-                <Button 
-                  size="sm" 
-                  className="group ml-auto bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
-                  onClick={() => window.location.href = `/match/${fixture.id}`}
-                >
-                  View Matchthread
-                  <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
-                </Button>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleFavorite(fixture.id)}
+                    className={`transition-all ${
+                      favorites.has(fixture.id)
+                        ? 'text-red-500 hover:text-red-600'
+                        : 'text-muted-foreground hover:text-red-500'
+                    }`}
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${favorites.has(fixture.id) ? 'fill-current' : ''}`}
+                    />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="group bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
+                    onClick={() => window.location.href = `/match/${fixture.id}`}
+                  >
+                    View Matchthread
+                    <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
+                  </Button>
+                </div>
               </div>
             </div>
           );
