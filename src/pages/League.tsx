@@ -27,16 +27,6 @@ interface Team {
   logo: string;
 }
 
-interface Fixture {
-  id: number;
-  date: string;
-  home_team_id: number;
-  away_team_id: number;
-  status: string;
-  goals: { home: number; away: number } | null;
-  venue: string;
-}
-
 const League = () => {
   const { slug } = useParams();
   const [activeTab, setActiveTab] = useState<TabType>("form");
@@ -56,7 +46,7 @@ const League = () => {
         .from("leagues")
         .select("*")
         .eq("slug", slug)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setLeague(data);
@@ -223,8 +213,8 @@ const League = () => {
 // Fixtures Tab Component
 const FixturesTab = ({ leagueId }: { leagueId: number }) => {
   return (
-    <div className="text-muted-foreground">
-      Fixtures content for league {leagueId}
+    <div className="text-center py-12">
+      <p className="text-muted-foreground">Fixtures coming soon...</p>
     </div>
   );
 };
@@ -232,216 +222,325 @@ const FixturesTab = ({ leagueId }: { leagueId: number }) => {
 // Table Tab Component
 const TableTab = ({ leagueId }: { leagueId: number }) => {
   return (
-    <div className="text-muted-foreground">
-      League table content for league {leagueId}
+    <div className="text-center py-12">
+      <p className="text-muted-foreground">League table coming soon...</p>
     </div>
   );
 };
 
 // Form Tab Component
 const FormTab = ({ leagueId }: { leagueId: number }) => {
-  const [teams, setTeams] = useState<any[]>([]);
+  const [fixtures, setFixtures] = useState<any[]>([]);
+  const [teams, setTeams] = useState<Map<number, Team>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [leagueName, setLeagueName] = useState("");
 
   useEffect(() => {
-    fetchTeamForm();
+    fetchRealData();
   }, [leagueId]);
 
-  const fetchTeamForm = async () => {
+  const fetchRealData = async () => {
     try {
-      // Fetch league name
-      const { data: leagueData } = await supabase
-        .from("leagues")
-        .select("name")
-        .eq("id", leagueId)
-        .single();
-      
-      if (leagueData) {
-        setLeagueName(leagueData.name);
-      }
+      // Fetch fixtures for this league
+      const { data: fixturesData, error: fixturesError } = await supabase
+        .from("fixtures")
+        .select("*, goals")
+        .eq("league_id", leagueId)
+        .order("date", { ascending: false })
+        .limit(100);
 
-      // Mock data for now - will be replaced with real data
-      const mockTeams = [
-        {
-          id: 1,
-          name: "Bayern München",
-          logo: "",
-          position: 1,
-          points: 15,
-          goalDiff: 19,
-          goalsFor: 22,
-          goalsAgainst: 3,
-          form: ["W", "W", "W", "W", "W"],
-          lastMatches: [
-            { date: "Sep 26", opponent: "Werder Bremen", home: true, score: "4-0" },
-            { date: "Sep 20", opponent: "1899 Hoffenheim", home: false, score: "4-1" },
-            { date: "Sep 13", opponent: "Hamburger SV", home: true, score: "5-0" },
-            { date: "Aug 30", opponent: "FC Augsburg", home: false, score: "3-2" },
-            { date: "Aug 22", opponent: "RB Leipzig", home: true, score: "6-0" },
-          ],
-        },
-        {
-          id: 2,
-          name: "Borussia Dortmund",
-          logo: "",
-          position: 2,
-          points: 13,
-          goalDiff: 8,
-          goalsFor: 11,
-          goalsAgainst: 3,
-          form: ["W", "W", "W", "W", "D"],
-          lastMatches: [
-            { date: "Sep 27", opponent: "FSV Mainz 05", home: false, score: "2-0" },
-            { date: "Sep 21", opponent: "VfL Wolfsburg", home: true, score: "1-0" },
-            { date: "Sep 13", opponent: "1. FC Heidenheim", home: false, score: "2-0" },
-            { date: "Aug 31", opponent: "Union Berlin", home: true, score: "3-0" },
-            { date: "Aug 23", opponent: "FC St. Pauli", home: false, score: "3-3" },
-          ],
-        },
-      ];
+      if (fixturesError) throw fixturesError;
 
-      setTeams(mockTeams);
+      // Fetch all teams
+      const { data: teamsData, error: teamsError } = await supabase
+        .from("teams")
+        .select("*");
+
+      if (teamsError) throw teamsError;
+
+      // Create a map of teams for quick lookup
+      const teamsMap = new Map<number, Team>();
+      teamsData?.forEach(team => {
+        teamsMap.set(team.id, team);
+      });
+
+      setTeams(teamsMap);
+      setFixtures(fixturesData || []);
     } catch (error) {
-      console.error("Error fetching team form:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calculate team stats from fixtures
+  const calculateTeamStats = () => {
+    const teamStats = new Map<number, any>();
+
+    fixtures.forEach(fixture => {
+      if (!fixture.goals) return;
+
+      const homeTeamId = fixture.home_team_id;
+      const awayTeamId = fixture.away_team_id;
+      const homeGoals = fixture.goals.home;
+      const awayGoals = fixture.goals.away;
+
+      // Initialize stats if needed
+      if (!teamStats.has(homeTeamId)) {
+        teamStats.set(homeTeamId, {
+          id: homeTeamId,
+          matches: [],
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          points: 0,
+        });
+      }
+      if (!teamStats.has(awayTeamId)) {
+        teamStats.set(awayTeamId, {
+          id: awayTeamId,
+          matches: [],
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          points: 0,
+        });
+      }
+
+      const homeStats = teamStats.get(homeTeamId);
+      const awayStats = teamStats.get(awayTeamId);
+
+      // Update goals
+      homeStats.goalsFor += homeGoals;
+      homeStats.goalsAgainst += awayGoals;
+      awayStats.goalsFor += awayGoals;
+      awayStats.goalsAgainst += homeGoals;
+
+      // Update results
+      if (homeGoals > awayGoals) {
+        homeStats.wins++;
+        homeStats.points += 3;
+        awayStats.losses++;
+      } else if (homeGoals < awayGoals) {
+        awayStats.wins++;
+        awayStats.points += 3;
+        homeStats.losses++;
+      } else {
+        homeStats.draws++;
+        awayStats.draws++;
+        homeStats.points += 1;
+        awayStats.points += 1;
+      }
+
+      // Add match to history (limit to last 5)
+      homeStats.matches.unshift({
+        date: fixture.date,
+        opponent: teams.get(awayTeamId)?.name || "Unknown",
+        home: true,
+        score: `${homeGoals}-${awayGoals}`,
+        result: homeGoals > awayGoals ? "W" : homeGoals < awayGoals ? "L" : "D",
+      });
+
+      awayStats.matches.unshift({
+        date: fixture.date,
+        opponent: teams.get(homeTeamId)?.name || "Unknown",
+        home: false,
+        score: `${awayGoals}-${homeGoals}`,
+        result: awayGoals > homeGoals ? "W" : awayGoals < homeGoals ? "L" : "D",
+      });
+    });
+
+    // Convert to array and sort by points
+    const statsArray = Array.from(teamStats.values())
+      .map(stat => ({
+        ...stat,
+        matches: stat.matches.slice(0, 5),
+        goalDiff: stat.goalsFor - stat.goalsAgainst,
+        form: stat.matches.slice(0, 5).map((m: any) => m.result),
+      }))
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+        return b.goalsFor - a.goalsFor;
+      })
+      .slice(0, 10); // Top 10 teams
+
+    return statsArray;
   };
 
   if (loading) {
     return <Skeleton className="h-96 w-full" />;
   }
 
+  const topTeams = calculateTeamStats();
+
+  if (topTeams.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No fixture data available for this league yet.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Team Form Analysis - Left side (2/3) */}
-      <div className="lg:col-span-2 space-y-6">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="h-6 w-1 bg-primary rounded-full" />
-          <h2 className="text-xl font-semibold">Team Form Analysis</h2>
+      <div className="lg:col-span-2 space-y-4">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="h-8 w-1 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+          <h2 className="text-2xl font-bold">Team Form Analysis</h2>
         </div>
 
-        {teams.map((team) => (
-          <div key={team.id} className="border rounded-lg p-6 bg-card">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold text-muted-foreground">{team.position}</span>
-                <Trophy className="h-4 w-4 text-yellow-500" />
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                  {team.logo ? (
-                    <img src={team.logo} alt={team.name} className="h-8 w-8" />
-                  ) : (
-                    <span className="text-xs font-bold">{team.name.substring(0, 2)}</span>
+        {topTeams.slice(0, 5).map((team, idx) => {
+          const teamData = teams.get(team.id);
+          return (
+            <div
+              key={team.id}
+              className="group border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-xl font-bold">
+                    {idx + 1}
+                  </div>
+                  {teamData?.logo && (
+                    <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center">
+                      <img
+                        src={teamData.logo}
+                        alt={teamData.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
                   )}
-                </div>
-                <div>
-                  <h3 className="font-semibold">{team.name}</h3>
-                  <p className="text-xs text-muted-foreground">{leagueName}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="flex items-baseline gap-3">
                   <div>
-                    <div className="text-2xl font-bold">{team.points}</div>
-                    <div className="text-xs text-muted-foreground">PTS</div>
+                    <h3 className="text-lg font-bold">{teamData?.name || "Unknown Team"}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      {team.form.map((result: string, formIdx: number) => (
+                        <div
+                          key={formIdx}
+                          className={`h-5 w-5 rounded text-[10px] font-bold flex items-center justify-center ${
+                            result === "W"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : result === "D"
+                              ? "bg-amber-500/20 text-amber-400"
+                              : "bg-red-500/20 text-red-400"
+                          }`}
+                        >
+                          {result}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-6 text-right">
+                  <div>
+                    <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
+                      {team.points}
+                    </div>
+                    <div className="text-xs text-muted-foreground font-medium">Points</div>
                   </div>
                   <div>
-                    <div className="text-lg">{team.goalsFor}:{team.goalsAgainst}</div>
+                    <div className="text-lg font-semibold">{team.goalsFor}:{team.goalsAgainst}</div>
                     <div className="text-xs text-muted-foreground">GF:GA</div>
                   </div>
-                  <div className="text-emerald-500">
-                    <div className="text-lg">+{team.goalDiff}</div>
+                  <div>
+                    <div className={`text-lg font-semibold ${team.goalDiff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {team.goalDiff >= 0 ? '+' : ''}{team.goalDiff}
+                    </div>
                     <div className="text-xs text-muted-foreground">GD</div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mb-3">
-              <p className="text-xs text-muted-foreground mb-2">Last 5 Matches</p>
-              <div className="grid grid-cols-5 gap-2">
-                {team.lastMatches.map((match: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className={`rounded-lg p-3 ${
-                      match.score.startsWith("0-") || match.score.endsWith("-0")
-                        ? "bg-emerald-950/30 border border-emerald-900/50"
-                        : match.score.includes("3-3")
-                        ? "bg-amber-950/30 border border-amber-900/50"
-                        : "bg-emerald-950/30 border border-emerald-900/50"
-                    }`}
-                  >
-                    <div className="text-xs text-muted-foreground mb-1">{match.date}</div>
-                    <div className="text-xs mb-1 flex items-center gap-1">
-                      {match.home ? "vs" : "@"} <span className="truncate">{match.opponent}</span>
+              <div className="grid grid-cols-5 gap-3">
+                {team.matches.map((match: any, matchIdx: number) => {
+                  const isWin = match.result === "W";
+                  const isDraw = match.result === "D";
+                  return (
+                    <div
+                      key={matchIdx}
+                      className={`relative overflow-hidden rounded-lg p-3 border transition-all ${
+                        isWin
+                          ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
+                          : isDraw
+                          ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                          : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-muted-foreground mb-1 font-medium">
+                        {new Date(match.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </div>
+                      <div className="text-xs mb-2 line-clamp-2 h-8">
+                        <span className="text-muted-foreground">{match.home ? "vs" : "@"}</span>{" "}
+                        {match.opponent}
+                      </div>
+                      <div className="text-sm font-bold">{match.score}</div>
                     </div>
-                    <div className="text-sm font-semibold">{match.score}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Form:</span>
-              {team.form.map((result: string, idx: number) => (
-                <div
-                  key={idx}
-                  className={`h-6 w-6 rounded flex items-center justify-center text-xs font-semibold ${
-                    result === "W"
-                      ? "bg-emerald-500/20 text-emerald-500"
-                      : result === "D"
-                      ? "bg-amber-500/20 text-amber-500"
-                      : "bg-red-500/20 text-red-500"
-                  }`}
-                >
-                  {result}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* League Table - Right side (1/3) */}
       <div className="space-y-6">
-        <div className="border rounded-lg p-6 bg-card">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 sticky top-6">
+          <div className="flex items-center gap-2 mb-6">
             <Trophy className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">League Table</h2>
+            <h2 className="text-lg font-bold">League Table</h2>
           </div>
 
-          <div className="space-y-2">
-            {teams.map((team, idx) => (
-              <div key={team.id} className="flex items-center gap-3 py-2">
-                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-sm font-semibold">
-                  {idx + 1}
-                </div>
-                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                  {team.logo ? (
-                    <img src={team.logo} alt={team.name} className="h-6 w-6" />
-                  ) : (
-                    <span className="text-xs font-bold">{team.name.substring(0, 2)}</span>
+          <div className="space-y-1">
+            {topTeams.slice(0, 10).map((team, idx) => {
+              const teamData = teams.get(team.id);
+              const isTopFour = idx < 4;
+              const isRelegation = idx >= topTeams.length - 3;
+              
+              return (
+                <div
+                  key={team.id}
+                  className={`flex items-center gap-3 py-3 px-3 rounded-lg transition-all hover:bg-accent/50 ${
+                    isTopFour ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <div
+                    className={`flex items-center justify-center h-6 w-6 rounded text-xs font-bold ${
+                      isTopFour
+                        ? "bg-primary/20 text-primary"
+                        : isRelegation
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {idx + 1}
+                  </div>
+                  {teamData?.logo && (
+                    <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center">
+                      <img
+                        src={teamData.logo}
+                        alt={teamData.name}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
                   )}
+                  <span className="flex-1 text-sm font-medium truncate">
+                    {teamData?.name || "Unknown"}
+                  </span>
+                  <span className="text-sm font-bold">{team.points}</span>
                 </div>
-                <span className="flex-1 text-sm font-medium">{team.name}</span>
-                <span className="text-sm font-bold">{team.points}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <Button variant="link" className="w-full mt-4 text-primary">
-            View Full Table →
+          <Button variant="link" className="w-full mt-4 text-primary group">
+            View Full Table
+            <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
           </Button>
-        </div>
-
-        <div className="border rounded-lg p-6 bg-card">
-          <h3 className="font-semibold mb-4">League Form</h3>
-          <div className="grid grid-cols-5 gap-2">
-            {[...Array(25)].map((_, idx) => (
-              <div key={idx} className="h-8 w-8 rounded bg-muted/50" />
-            ))}
-          </div>
         </div>
       </div>
     </div>
@@ -451,8 +550,8 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 // Top Scorers Tab Component
 const ScorersTab = ({ leagueId }: { leagueId: number }) => {
   return (
-    <div className="text-muted-foreground">
-      Top scorers content for league {leagueId}
+    <div className="text-center py-12">
+      <p className="text-muted-foreground">Top scorers data coming soon...</p>
     </div>
   );
 };
