@@ -199,7 +199,7 @@ const League = () => {
             </div>
 
             {/* Tab Content */}
-            {activeTab === "fixtures" && <FixturesTab leagueId={league.id} />}
+            {activeTab === "fixtures" && <FixturesTab leagueId={league.id} setActiveTab={setActiveTab} />}
             {activeTab === "table" && <TableTab leagueId={league.id} />}
             {activeTab === "form" && <FormTab leagueId={league.id} />}
             {activeTab === "scorers" && <ScorersTab leagueId={league.id} />}
@@ -211,7 +211,7 @@ const League = () => {
 };
 
 // Fixtures Tab Component
-const FixturesTab = ({ leagueId }: { leagueId: number }) => {
+const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTab: (tab: TabType) => void }) => {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -501,6 +501,15 @@ const FixturesTab = ({ leagueId }: { leagueId: number }) => {
               );
             })}
           </div>
+
+          <Button 
+            variant="link" 
+            className="w-full mt-4 text-primary group"
+            onClick={() => setActiveTab("table")}
+          >
+            View Full League Table
+            <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+          </Button>
         </div>
 
         {/* League Form */}
@@ -513,34 +522,36 @@ const FixturesTab = ({ leagueId }: { leagueId: number }) => {
           <div className="space-y-3">
             {topTeams.slice(0, 5).map((team) => {
               const teamData = teams.get(team.id);
+              const last5Matches = team.matches.slice(0, 5);
               
               return (
-                <div key={team.id} className="flex items-center gap-3">
-                  {teamData?.logo && (
-                    <div className="h-8 w-8 rounded bg-background/50 p-1 flex items-center justify-center flex-shrink-0">
-                      <img
-                        src={teamData.logo}
-                        alt={teamData.name}
-                        className="h-full w-full object-contain"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{teamData?.name || "Unknown"}</div>
+                <div key={team.id} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    {teamData?.logo && (
+                      <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
+                        <img
+                          src={teamData.logo}
+                          alt={teamData.name}
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                    )}
+                    <div className="text-xs font-semibold truncate">{teamData?.name || "Unknown"}</div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {team.form.map((result: string, formIdx: number) => (
+                  <div className="grid grid-cols-5 gap-1">
+                    {last5Matches.map((match: any, matchIdx: number) => (
                       <div
-                        key={formIdx}
-                        className={`h-6 w-6 rounded text-[10px] font-bold flex items-center justify-center ${
-                          result === "W"
+                        key={matchIdx}
+                        className={`rounded p-1.5 text-center ${
+                          match.result === "W"
                             ? "bg-emerald-500/20 text-emerald-400"
-                            : result === "D"
+                            : match.result === "D"
                             ? "bg-amber-500/20 text-amber-400"
                             : "bg-red-500/20 text-red-400"
                         }`}
                       >
-                        {result}
+                        <div className="text-[9px] font-bold mb-0.5">{match.result}</div>
+                        <div className="text-[8px] text-muted-foreground">{match.score}</div>
                       </div>
                     ))}
                   </div>
@@ -548,6 +559,15 @@ const FixturesTab = ({ leagueId }: { leagueId: number }) => {
               );
             })}
           </div>
+
+          <Button 
+            variant="link" 
+            className="w-full mt-4 text-primary group"
+            onClick={() => setActiveTab("form")}
+          >
+            View Full League Form
+            <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+          </Button>
         </div>
       </div>
     </div>
