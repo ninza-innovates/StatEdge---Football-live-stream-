@@ -46,6 +46,16 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
     
+    /* Sidebar colors */
+    --sidebar-background: 221 50% 8%;       /* Same as card */
+    --sidebar-foreground: 220 13% 91%;      /* White text */
+    --sidebar-primary: 217 91% 60%;         /* Blue */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 28% 17%;          /* Slate for hover */
+    --sidebar-accent-foreground: 220 13% 91%;
+    --sidebar-border: 215 28% 17%;          /* Subtle borders */
+    --sidebar-ring: 217 91% 60%;            /* Blue focus rings */
+    
     /* Custom gradients */
     --gradient-primary: linear-gradient(135deg, #3B82F6, #8B5CF6);
     --gradient-accent: linear-gradient(135deg, #06B6D4, #8B5CF6);
@@ -77,6 +87,16 @@ All colors MUST be HSL.
     --border: 215 28% 17%;
     --input: 215 28% 17%;
     --ring: 217 91% 60%;
+    
+    /* Sidebar colors */
+    --sidebar-background: 221 50% 8%;
+    --sidebar-foreground: 220 13% 91%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 28% 17%;
+    --sidebar-accent-foreground: 220 13% 91%;
+    --sidebar-border: 215 28% 17%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
