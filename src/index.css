@@ -22,6 +22,7 @@ All colors MUST be HSL.
 
     /* Primary gradient blue to purple */
     --primary: 217 91% 60%;             /* Blue #3B82F6 */
+    --primary-hover: 217 91% 70%;       /* Lighter blue for hover */
     --primary-foreground: 0 0% 100%;    /* Pure white */
 
     /* Secondary muted grays */
@@ -63,6 +64,7 @@ All colors MUST be HSL.
     --popover: 221 39% 11%;
     --popover-foreground: 220 13% 91%;
     --primary: 217 91% 60%;
+    --primary-hover: 217 91% 70%;
     --primary-foreground: 0 0% 100%;
     --secondary: 215 28% 17%;
     --secondary-foreground: 220 9% 68%;

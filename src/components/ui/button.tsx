@@ -9,19 +9,19 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-[hsl(217,91%,70%)] hover:shadow-lg hover:shadow-primary/20 transition-all",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background hover:bg-[hsl(217,91%,70%)]/10 hover:text-[hsl(217,91%,70%)] hover:border-[hsl(217,91%,70%)] transition-all",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        ghost: "hover:bg-[hsl(217,91%,70%)]/10 hover:text-[hsl(217,91%,70%)] transition-all",
         link: "text-primary underline-offset-4 hover:underline",
         // StatEdge.ai custom variants
-        hero: "text-white font-bold bg-gradient-to-r from-primary to-purple-600 btn-glow-primary border-0",
-        heroCta: "text-white font-bold bg-gradient-to-r from-primary to-purple-600 btn-glow-primary border-0",
-        heroSecondary: "text-white font-medium border-2 border-white bg-transparent btn-glow-secondary hover:border-primary hover:text-primary",
+        hero: "text-white font-bold bg-gradient-to-r from-primary to-purple-600 hover:from-[hsl(217,91%,70%)] hover:to-purple-500 hover:shadow-lg hover:shadow-primary/30 transition-all",
+        heroCta: "text-white font-bold bg-gradient-to-r from-primary to-purple-600 hover:from-[hsl(217,91%,70%)] hover:to-purple-500 hover:shadow-lg hover:shadow-primary/30 transition-all",
+        heroSecondary: "text-white font-medium border-2 border-white bg-transparent hover:border-[hsl(217,91%,70%)] hover:text-[hsl(217,91%,70%)] hover:bg-[hsl(217,91%,70%)]/5 transition-all",
       },
       size: {
         default: "h-10 px-4 py-2",
