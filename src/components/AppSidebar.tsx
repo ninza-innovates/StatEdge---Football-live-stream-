@@ -71,7 +71,7 @@ export function AppSidebar() {
           <img 
             src="/lovable-uploads/dd09e007-2423-4091-b113-8404a07c3b63.png" 
             alt="StatEdge.ai" 
-            className="h-8 w-auto"
+            className="h-12 w-auto"
           />
         </div>
       </SidebarHeader>
