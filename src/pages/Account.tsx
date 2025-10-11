@@ -177,17 +177,39 @@ export default function Account() {
 
                 <Separator />
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Subscription Plan</span>
                     <Badge variant={isSubscribed ? "default" : "secondary"}>
                       {subscriptionTier ? `${subscriptionTier} Plan` : 'Free Plan'}
                     </Badge>
                   </div>
-                  {!isSubscribed && (
-                    <p className="text-xs text-muted-foreground">
-                      Upgrade to unlock unlimited AI insights and premium features
-                    </p>
+                  
+                  {isSubscribed ? (
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={handleManageBilling}
+                      disabled={processingBilling}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Manage Subscription
+                      <ExternalLink className="h-4 w-4 ml-auto" />
+                    </Button>
+                  ) : (
+                    <>
+                      <Button 
+                        variant="hero" 
+                        className="w-full"
+                        onClick={handleUpgrade}
+                        disabled={processingBilling}
+                      >
+                        Upgrade to Premium
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Unlock unlimited AI insights and premium features
+                      </p>
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -241,52 +263,6 @@ export default function Account() {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">No stats available</div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Billing & Subscription */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Billing & Subscription
-                </CardTitle>
-                <CardDescription>Manage your subscription and billing</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Current Plan</p>
-                    <p className="text-xl font-semibold">
-                      {subscriptionTier ? `${subscriptionTier} Plan` : 'Free Plan'}
-                    </p>
-                  </div>
-                  <Badge variant={isSubscribed ? "default" : "secondary"}>
-                    {isSubscribed ? 'Active' : 'Free'}
-                  </Badge>
-                </div>
-
-                {isSubscribed ? (
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleManageBilling}
-                    disabled={processingBilling}
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Manage Subscription
-                    <ExternalLink className="h-4 w-4 ml-auto" />
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="hero" 
-                    className="w-full"
-                    onClick={handleUpgrade}
-                    disabled={processingBilling}
-                  >
-                    Upgrade to Premium
-                  </Button>
                 )}
               </CardContent>
             </Card>
