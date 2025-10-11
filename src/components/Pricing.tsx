@@ -1,11 +1,63 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Pricing = () => {
-  const handleSubscribe = (planType: 'weekly' | 'monthly') => {
-    // Placeholder for subscription functionality
-    console.log(`Subscribe to ${planType} plan`);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  // Replace these with your actual Stripe Price IDs
+  const STRIPE_PRICE_IDS = {
+    weekly: 'price_weekly_replace_with_actual_id',
+    monthly: 'price_monthly_replace_with_actual_id'
+  };
+
+  const handleSubscribe = async (planType: 'weekly' | 'monthly') => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to subscribe",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
+    setLoading(planType);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: {
+          priceId: STRIPE_PRICE_IDS[planType],
+          successUrl: `${window.location.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/#pricing`
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      toast({
+        title: "Subscription failed",
+        description: "Unable to start checkout. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(null);
+    }
   };
 
   const plans = [
@@ -101,8 +153,9 @@ const Pricing = () => {
                   variant={plan.popular ? "hero" : "outline"}
                   size="lg"
                   onClick={() => handleSubscribe(plan.planType)}
+                  disabled={loading === plan.planType}
                 >
-                  {plan.buttonText}
+                  {loading === plan.planType ? "Loading..." : plan.buttonText}
                 </Button>
               </CardContent>
             </Card>
