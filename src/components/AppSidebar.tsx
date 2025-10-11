@@ -69,9 +69,9 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
           <img 
-            src="/favicon.ico" 
+            src="/favicon.png" 
             alt="StatEdge.ai Logo" 
-            className="h-8 w-8 flex-shrink-0"
+            className="h-8 w-8 flex-shrink-0 rounded-lg"
           />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
