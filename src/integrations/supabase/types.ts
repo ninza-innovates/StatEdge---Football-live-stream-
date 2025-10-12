@@ -272,6 +272,60 @@ export type Database = {
         }
         Relationships: []
       }
+      standings: {
+        Row: {
+          draw: number
+          form: string | null
+          goal_diff: number
+          goals_against: number
+          goals_for: number
+          id: number
+          league_id: number
+          lose: number
+          played: number
+          points: number
+          rank: number
+          season: number
+          team_id: number
+          updated_at: string
+          win: number
+        }
+        Insert: {
+          draw?: number
+          form?: string | null
+          goal_diff?: number
+          goals_against?: number
+          goals_for?: number
+          id?: number
+          league_id: number
+          lose?: number
+          played?: number
+          points?: number
+          rank: number
+          season: number
+          team_id: number
+          updated_at?: string
+          win?: number
+        }
+        Update: {
+          draw?: number
+          form?: string | null
+          goal_diff?: number
+          goals_against?: number
+          goals_for?: number
+          id?: number
+          league_id?: number
+          lose?: number
+          played?: number
+          points?: number
+          rank?: number
+          season?: number
+          team_id?: number
+          updated_at?: string
+          win?: number
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           created_at: string | null
@@ -335,6 +389,45 @@ export type Database = {
           logo?: string
           name?: string
           venue?: string
+        }
+        Relationships: []
+      }
+      top_scorers: {
+        Row: {
+          appearances: number
+          assists: number
+          goals: number
+          id: number
+          league_id: number
+          player_name: string
+          player_photo: string | null
+          season: number
+          team_id: number
+          updated_at: string
+        }
+        Insert: {
+          appearances?: number
+          assists?: number
+          goals?: number
+          id?: number
+          league_id: number
+          player_name: string
+          player_photo?: string | null
+          season: number
+          team_id: number
+          updated_at?: string
+        }
+        Update: {
+          appearances?: number
+          assists?: number
+          goals?: number
+          id?: number
+          league_id?: number
+          player_name?: string
+          player_photo?: string | null
+          season?: number
+          team_id?: number
+          updated_at?: string
         }
         Relationships: []
       }

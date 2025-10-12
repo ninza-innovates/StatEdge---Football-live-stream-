@@ -186,6 +186,89 @@ async function syncFixtures() {
   return { fixtures: syncedCount, teams: uniqueTeamIds.size };
 }
 
+async function syncStandings() {
+  console.log('Syncing Premier League standings...');
+  
+  try {
+    const standingsData = await callRapidAPI(
+      `standings?league=${PREMIER_LEAGUE_ID}&season=${CURRENT_SEASON}`
+    );
+    
+    const standings = standingsData.response?.[0]?.league?.standings?.[0];
+    
+    if (!standings || standings.length === 0) {
+      console.log('No standings data available');
+      return 0;
+    }
+    
+    for (const standing of standings) {
+      await supabase
+        .from('standings')
+        .upsert({
+          league_id: PREMIER_LEAGUE_ID,
+          season: CURRENT_SEASON,
+          team_id: standing.team.id,
+          rank: standing.rank,
+          points: standing.points,
+          played: standing.all.played,
+          win: standing.all.win,
+          draw: standing.all.draw,
+          lose: standing.all.lose,
+          goals_for: standing.all.goals.for,
+          goals_against: standing.all.goals.against,
+          goal_diff: standing.goalsDiff,
+          form: standing.form || '',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'league_id,season,team_id' });
+    }
+    
+    console.log(`Synced ${standings.length} standings entries`);
+    return standings.length;
+  } catch (error) {
+    console.error('Error syncing standings:', error);
+    return 0;
+  }
+}
+
+async function syncTopScorers() {
+  console.log('Syncing Premier League top scorers...');
+  
+  try {
+    const scorersData = await callRapidAPI(
+      `players/topscorers?league=${PREMIER_LEAGUE_ID}&season=${CURRENT_SEASON}`
+    );
+    
+    const scorers = scorersData.response;
+    
+    if (!scorers || scorers.length === 0) {
+      console.log('No top scorers data available');
+      return 0;
+    }
+    
+    for (const scorer of scorers.slice(0, 20)) {
+      await supabase
+        .from('top_scorers')
+        .upsert({
+          league_id: PREMIER_LEAGUE_ID,
+          season: CURRENT_SEASON,
+          player_name: scorer.player.name,
+          player_photo: scorer.player.photo,
+          team_id: scorer.statistics[0].team.id,
+          goals: scorer.statistics[0].goals.total || 0,
+          assists: scorer.statistics[0].goals.assists || 0,
+          appearances: scorer.statistics[0].games.appearences || 0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'league_id,season,player_name,team_id' });
+    }
+    
+    console.log(`Synced ${Math.min(20, scorers.length)} top scorers`);
+    return Math.min(20, scorers.length);
+  } catch (error) {
+    console.error('Error syncing top scorers:', error);
+    return 0;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -201,11 +284,21 @@ serve(async (req) => {
     const syncResults = await syncFixtures();
     console.log('Sync results:', syncResults);
     
+    const standingsCount = await syncStandings();
+    console.log('Standings synced:', standingsCount);
+    
+    const scorersCount = await syncTopScorers();
+    console.log('Top scorers synced:', scorersCount);
+    
     const results = {
       success: true,
       timestamp: new Date().toISOString(),
       archived: archiveResults.archived,
-      synced: syncResults
+      synced: {
+        ...syncResults,
+        standings: standingsCount,
+        topScorers: scorersCount
+      }
     };
     
     console.log('=== SYNC COMPLETED SUCCESSFULLY ===');

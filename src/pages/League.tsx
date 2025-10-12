@@ -247,12 +247,14 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
   const { isSubscribed, loading: subscriptionLoading } = useSubscription();
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
+  const [standings, setStandings] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFixtures();
+    fetchStandings();
     if (user) {
       fetchFavorites();
     }
@@ -291,6 +293,23 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
       console.error("Error fetching fixtures:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStandings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("standings")
+        .select("*")
+        .eq("league_id", leagueId)
+        .order("rank", { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+
+      setStandings(data || []);
+    } catch (error) {
+      console.error("Error fetching standings:", error);
     }
   };
 
@@ -373,99 +392,6 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
     }
   };
 
-  // Calculate team stats from all fixtures for sidebar
-  const calculateTeamStats = () => {
-    const teamStats = new Map<number, any>();
-
-    fixtures.forEach(fixture => {
-      if (!fixture.goals) return;
-
-      const homeTeamId = fixture.home_team_id;
-      const awayTeamId = fixture.away_team_id;
-      const homeGoals = fixture.goals.home;
-      const awayGoals = fixture.goals.away;
-
-      // Initialize stats if needed
-      if (!teamStats.has(homeTeamId)) {
-        teamStats.set(homeTeamId, {
-          id: homeTeamId,
-          matches: [],
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          points: 0,
-        });
-      }
-      if (!teamStats.has(awayTeamId)) {
-        teamStats.set(awayTeamId, {
-          id: awayTeamId,
-          matches: [],
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          points: 0,
-        });
-      }
-
-      const homeStats = teamStats.get(homeTeamId);
-      const awayStats = teamStats.get(awayTeamId);
-
-      // Update goals
-      homeStats.goalsFor += homeGoals;
-      homeStats.goalsAgainst += awayGoals;
-      awayStats.goalsFor += awayGoals;
-      awayStats.goalsAgainst += homeGoals;
-
-      // Update results
-      if (homeGoals > awayGoals) {
-        homeStats.wins++;
-        homeStats.points += 3;
-        awayStats.losses++;
-      } else if (homeGoals < awayGoals) {
-        awayStats.wins++;
-        awayStats.points += 3;
-        homeStats.losses++;
-      } else {
-        homeStats.draws++;
-        awayStats.draws++;
-        homeStats.points += 1;
-        awayStats.points += 1;
-      }
-
-      // Add match to history (limit to last 5)
-      homeStats.matches.unshift({
-        date: fixture.date,
-        result: homeGoals > awayGoals ? "W" : homeGoals < awayGoals ? "L" : "D",
-      });
-
-      awayStats.matches.unshift({
-        date: fixture.date,
-        result: awayGoals > homeGoals ? "W" : awayGoals < homeGoals ? "L" : "D",
-      });
-    });
-
-    // Convert to array and sort by points
-    const statsArray = Array.from(teamStats.values())
-      .map(stat => ({
-        ...stat,
-        matches: stat.matches.slice(0, 5),
-        goalDiff: stat.goalsFor - stat.goalsAgainst,
-        form: stat.matches.slice(0, 5).map((m: any) => m.result),
-      }))
-      .sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
-        return b.goalsFor - a.goalsFor;
-      })
-      .slice(0, 10);
-
-    return statsArray;
-  };
-
   if (loading) {
     return <Skeleton className="h-96 w-full" />;
   }
@@ -477,8 +403,6 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
       </div>
     );
   }
-
-  const topTeams = calculateTeamStats();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -629,13 +553,13 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
           </div>
 
           <div className="space-y-1">
-            {topTeams.slice(0, 6).map((team, idx) => {
-              const teamData = teams.get(team.id);
+            {standings.slice(0, 6).map((standing, idx) => {
+              const teamData = teams.get(standing.team_id);
               const isTopFour = idx < 4;
               
               return (
                 <div
-                  key={team.id}
+                  key={standing.team_id}
                   className={`flex items-center gap-3 py-3 px-3 rounded-lg transition-all hover:bg-accent/50 ${
                     isTopFour ? "bg-primary/5" : ""
                   }`}
@@ -647,7 +571,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {idx + 1}
+                    {standing.rank}
                   </div>
                   {teamData?.logo && (
                     <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center">
@@ -661,7 +585,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                   <span className="flex-1 text-sm font-medium truncate">
                     {teamData?.name || "Unknown"}
                   </span>
-                  <span className="text-sm font-bold">{team.points}</span>
+                  <span className="text-sm font-bold">{standing.points}</span>
                 </div>
               );
             })}
@@ -685,12 +609,12 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
           </div>
 
           <div className="space-y-3">
-            {topTeams.slice(0, 5).map((team) => {
-              const teamData = teams.get(team.id);
-              const last5Matches = team.matches.slice(0, 5);
+            {standings.slice(0, 5).map((standing) => {
+              const teamData = teams.get(standing.team_id);
+              const formLetters = standing.form ? standing.form.split('').slice(0, 5) : [];
               
               return (
-                <div key={team.id} className="space-y-2">
+                <div key={standing.team_id} className="space-y-2">
                   <div className="flex items-center gap-2">
                     {teamData?.logo && (
                       <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
@@ -704,19 +628,18 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                     <div className="text-xs font-semibold truncate">{teamData?.name || "Unknown"}</div>
                   </div>
                   <div className="grid grid-cols-5 gap-1">
-                    {last5Matches.map((match: any, matchIdx: number) => (
+                    {formLetters.map((result: string, matchIdx: number) => (
                       <div
                         key={matchIdx}
                         className={`rounded p-1.5 text-center ${
-                          match.result === "W"
+                          result === "W"
                             ? "bg-emerald-500/20 text-emerald-400"
-                            : match.result === "D"
+                            : result === "D"
                             ? "bg-amber-500/20 text-amber-400"
                             : "bg-red-500/20 text-red-400"
                         }`}
                       >
-                        <div className="text-[9px] font-bold mb-0.5">{match.result}</div>
-                        <div className="text-[8px] text-muted-foreground">{match.score}</div>
+                        <div className="text-[9px] font-bold">{result}</div>
                       </div>
                     ))}
                   </div>
@@ -759,88 +682,16 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
         });
         setTeams(teamsMap);
 
-        // Fetch fixtures for this league
-        const { data: fixturesData } = await supabase
-          .from("fixtures")
+        // Fetch standings from database (populated by sync function)
+        const { data: standingsData, error } = await supabase
+          .from("standings")
           .select("*")
           .eq("league_id", leagueId)
-          .not("goals", "is", null);
+          .order("rank", { ascending: true });
 
-        // Calculate standings
-        const standingsMap = new Map<number, any>();
+        if (error) throw error;
 
-        fixturesData?.forEach((fixture) => {
-          const homeGoals = fixture.goals?.home ?? 0;
-          const awayGoals = fixture.goals?.away ?? 0;
-
-          // Initialize home team
-          if (!standingsMap.has(fixture.home_team_id)) {
-            standingsMap.set(fixture.home_team_id, {
-              teamId: fixture.home_team_id,
-              played: 0,
-              won: 0,
-              drawn: 0,
-              lost: 0,
-              goalsFor: 0,
-              goalsAgainst: 0,
-              goalDifference: 0,
-              points: 0,
-            });
-          }
-
-          // Initialize away team
-          if (!standingsMap.has(fixture.away_team_id)) {
-            standingsMap.set(fixture.away_team_id, {
-              teamId: fixture.away_team_id,
-              played: 0,
-              won: 0,
-              drawn: 0,
-              lost: 0,
-              goalsFor: 0,
-              goalsAgainst: 0,
-              goalDifference: 0,
-              points: 0,
-            });
-          }
-
-          const homeStats = standingsMap.get(fixture.home_team_id);
-          const awayStats = standingsMap.get(fixture.away_team_id);
-
-          // Update stats
-          homeStats.played++;
-          awayStats.played++;
-          homeStats.goalsFor += homeGoals;
-          homeStats.goalsAgainst += awayGoals;
-          awayStats.goalsFor += awayGoals;
-          awayStats.goalsAgainst += homeGoals;
-
-          if (homeGoals > awayGoals) {
-            homeStats.won++;
-            homeStats.points += 3;
-            awayStats.lost++;
-          } else if (homeGoals < awayGoals) {
-            awayStats.won++;
-            awayStats.points += 3;
-            homeStats.lost++;
-          } else {
-            homeStats.drawn++;
-            awayStats.drawn++;
-            homeStats.points += 1;
-            awayStats.points += 1;
-          }
-
-          homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
-          awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
-        });
-
-        const standingsArray = Array.from(standingsMap.values())
-          .sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
-            return b.goalsFor - a.goalsFor;
-          });
-
-        setStandings(standingsArray);
+        setStandings(standingsData || []);
       } catch (error) {
         console.error("Error fetching table data:", error);
       } finally {
@@ -881,10 +732,10 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
           </thead>
           <tbody>
             {standings.map((standing, index) => {
-              const team = teams.get(standing.teamId);
+              const team = teams.get(standing.team_id);
               return (
                 <tr
-                  key={standing.teamId}
+                  key={standing.team_id}
                   className={`border-b border-border/30 hover:bg-accent/50 transition-colors ${
                     index < 4
                       ? "bg-emerald-500/5"
@@ -895,7 +746,7 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
                       : ""
                   }`}
                 >
-                  <td className="py-3 px-2 text-sm font-medium">{index + 1}</td>
+                  <td className="py-3 px-2 text-sm font-medium">{standing.rank}</td>
                   <td className="py-3 px-2">
                     <div className="flex items-center gap-2">
                       {team?.logo && (
@@ -911,14 +762,14 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
                     </div>
                   </td>
                   <td className="text-center py-3 px-2 text-sm">{standing.played}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.won}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.drawn}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.lost}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.goalsFor}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.goalsAgainst}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.win}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.draw}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.lose}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.goals_for}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.goals_against}</td>
                   <td className="text-center py-3 px-2 text-sm font-medium">
-                    {standing.goalDifference > 0 ? "+" : ""}
-                    {standing.goalDifference}
+                    {standing.goal_diff > 0 ? "+" : ""}
+                    {standing.goal_diff}
                   </td>
                   <td className="text-center py-3 px-2 text-sm font-bold">{standing.points}</td>
                 </tr>
@@ -1285,21 +1136,17 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
         });
         setTeams(teamsMap);
 
-        // Mock top scorers data (in a real app, this would come from API/database)
-        const mockScorers = [
-          { id: 1, name: "Erling Haaland", teamId: 33, goals: 27, assists: 5, matches: 29 },
-          { id: 2, name: "Mohamed Salah", teamId: 40, goals: 22, assists: 12, matches: 32 },
-          { id: 3, name: "Harry Kane", teamId: 47, goals: 20, assists: 3, matches: 31 },
-          { id: 4, name: "Ivan Toney", teamId: 55, goals: 19, assists: 4, matches: 28 },
-          { id: 5, name: "Ollie Watkins", teamId: 66, goals: 18, assists: 11, matches: 33 },
-          { id: 6, name: "Callum Wilson", teamId: 34, goals: 17, assists: 6, matches: 27 },
-          { id: 7, name: "Marcus Rashford", teamId: 33, goals: 16, assists: 5, matches: 30 },
-          { id: 8, name: "Alexander Isak", teamId: 34, goals: 15, assists: 2, matches: 29 },
-          { id: 9, name: "Gabriel Jesus", teamId: 42, goals: 14, assists: 8, matches: 28 },
-          { id: 10, name: "Darwin Núñez", teamId: 40, goals: 13, assists: 4, matches: 31 },
-        ];
+        // Fetch top scorers from database (populated by sync function)
+        const { data: scorersData, error } = await supabase
+          .from("top_scorers")
+          .select("*")
+          .eq("league_id", leagueId)
+          .order("goals", { ascending: false })
+          .limit(20);
 
-        setScorers(mockScorers);
+        if (error) throw error;
+
+        setScorers(scorersData || []);
       } catch (error) {
         console.error("Error fetching scorers data:", error);
       } finally {
@@ -1324,7 +1171,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
     <div className="space-y-4">
       <div className="grid gap-3">
         {scorers.map((scorer, index) => {
-          const team = teams.get(scorer.teamId);
+          const team = teams.get(scorer.team_id);
           return (
             <div
               key={scorer.id}
@@ -1336,7 +1183,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
 
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">
-                  <h3 className="font-semibold text-lg">{scorer.name}</h3>
+                  <h3 className="font-semibold text-lg">{scorer.player_name}</h3>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {team?.logo && (
@@ -1362,7 +1209,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
                   <div className="text-xs text-muted-foreground">Assists</div>
                 </div>
                 <div>
-                  <div className="text-xl font-semibold">{scorer.matches}</div>
+                  <div className="text-xl font-semibold">{scorer.appearances}</div>
                   <div className="text-xs text-muted-foreground">Matches</div>
                 </div>
               </div>
