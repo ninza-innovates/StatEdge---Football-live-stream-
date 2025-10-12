@@ -10,6 +10,26 @@ export function AdminSyncButton() {
   const handleSync = async () => {
     setLoading(true);
     try {
+      // First test the API connection
+      console.log('Testing API connection...');
+      const testResponse = await fetch(
+        'https://fsoczxlarrlecnbwghdz.supabase.co/functions/v1/test-api-connection',
+        { method: 'POST' }
+      );
+      
+      const testData = await testResponse.json();
+      console.log('API test result:', testData);
+      
+      if (!testData.success) {
+        toast({
+          title: "API Connection Failed",
+          description: `Status ${testData.status}: Check your RAPIDAPI_KEY in Supabase secrets`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // If test passes, run the sync
       const response = await fetch(
         'https://fsoczxlarrlecnbwghdz.supabase.co/functions/v1/sync-football-data',
         {
@@ -21,7 +41,8 @@ export function AdminSyncButton() {
       );
 
       if (!response.ok) {
-        throw new Error('Sync failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Sync failed');
       }
 
       const data = await response.json();
@@ -37,7 +58,7 @@ export function AdminSyncButton() {
       console.error('Sync error:', error);
       toast({
         title: "Sync Failed",
-        description: "Failed to sync data from API-Football",
+        description: error instanceof Error ? error.message : "Failed to sync data",
         variant: "destructive",
       });
     } finally {

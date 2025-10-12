@@ -1,5 +1,8 @@
 project_id = "fsoczxlarrlecnbwghdz"
 
+[functions.test-api-connection]
+verify_jwt = false
+
 [functions.sync-football-data]
 verify_jwt = false
 

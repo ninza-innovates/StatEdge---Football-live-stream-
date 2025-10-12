@@ -53,7 +53,24 @@ async function archiveFinishedFixtures() {
   
   console.log(`Found ${finishedFixtures.length} fixtures to archive`);
   
+  let archivedCount = 0;
+  
   for (const fixture of finishedFixtures) {
+    // Check if already archived to avoid duplicates
+    const { data: existingArchive } = await supabase
+      .from('fixtures_archive')
+      .select('id')
+      .eq('id', fixture.id)
+      .single();
+    
+    if (existingArchive) {
+      console.log(`Fixture ${fixture.id} already archived, skipping...`);
+      // Just delete from main table
+      await supabase.from('fixtures').delete().eq('id', fixture.id);
+      await supabase.from('ai_summaries').delete().eq('fixture_id', fixture.id);
+      continue;
+    }
+    
     const { data: aiSummary } = await supabase
       .from('ai_summaries')
       .select('*')
@@ -83,10 +100,11 @@ async function archiveFinishedFixtures() {
     
     await supabase.from('ai_summaries').delete().eq('fixture_id', fixture.id);
     await supabase.from('fixtures').delete().eq('id', fixture.id);
+    archivedCount++;
   }
   
-  console.log(`Archived and deleted ${finishedFixtures.length} fixtures`);
-  return { archived: finishedFixtures.length, deleted: finishedFixtures.length };
+  console.log(`Archived and deleted ${archivedCount} new fixtures`);
+  return { archived: archivedCount, deleted: archivedCount };
 }
 
 async function syncFixtures() {
