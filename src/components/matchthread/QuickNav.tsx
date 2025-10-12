@@ -49,7 +49,7 @@ export function QuickNav({ sections }: QuickNavProps) {
   };
 
   return (
-    <div className="sticky top-14 z-40 bg-background border-b">
+    <div className="sticky top-14 z-50 bg-background border-b shadow-sm" style={{ position: '-webkit-sticky' }}>
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
         {/* Mobile: Horizontal Scroll */}
         <div className="flex overflow-x-auto scrollbar-hide py-3 gap-2 snap-x snap-mandatory scroll-smooth min-h-[56px]">
