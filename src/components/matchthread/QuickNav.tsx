@@ -49,10 +49,10 @@ export function QuickNav({ sections }: QuickNavProps) {
   };
 
   return (
-    <div className="sticky top-14 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+    <div className="sticky top-14 z-40 bg-background border-b will-change-transform">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
         {/* Mobile: Horizontal Scroll */}
-        <div className="flex overflow-x-auto scrollbar-hide py-3 gap-2 snap-x snap-mandatory scroll-smooth">
+        <div className="flex overflow-x-auto scrollbar-hide py-3 gap-2 snap-x snap-mandatory scroll-smooth min-h-[56px]">
           {sections.map((section) => (
             <button
               key={section.id}
