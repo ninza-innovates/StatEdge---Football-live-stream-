@@ -77,9 +77,15 @@ const MatchThread = () => {
   }, [slug]);
 
   useEffect(() => {
-    if (!subscriptionLoading && !isSubscribed) {
-      setPricingModalOpen(true);
-    }
+    // Only show pricing modal if subscription check is complete AND user is not subscribed
+    // Add a small delay to avoid flashing during initial load
+    const timer = setTimeout(() => {
+      if (!subscriptionLoading && !isSubscribed) {
+        setPricingModalOpen(true);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [isSubscribed, subscriptionLoading]);
 
   const fetchMatchData = async () => {
