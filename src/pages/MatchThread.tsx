@@ -224,7 +224,7 @@ const MatchThread = () => {
   return (
     <>
       <Helmet>
-        <title>{metaTitle} - Match Thread | TopCorner</title>
+        <title>{metaTitle} - Match Thread | StatEdge</title>
         <meta name="description" content={metaDescription} />
         <meta property="og:title" content={`${metaTitle} - Match Thread`} />
         <meta property="og:description" content={metaDescription} />
