@@ -70,6 +70,60 @@ export type Database = {
           },
         ]
       }
+      ai_summaries_archive: {
+        Row: {
+          advanced_insights: Json | null
+          advanced_summary: string | null
+          archived_at: string
+          confidence: number | null
+          created_at: string | null
+          fallback_used: boolean | null
+          fixture_id: number
+          id: string
+          key_stats: Json | null
+          lineups_injuries: Json | null
+          model: string
+          player_markets: Json | null
+          potential_bets: Json | null
+          quick_summary: string | null
+          tactical_analysis: Json | null
+        }
+        Insert: {
+          advanced_insights?: Json | null
+          advanced_summary?: string | null
+          archived_at?: string
+          confidence?: number | null
+          created_at?: string | null
+          fallback_used?: boolean | null
+          fixture_id: number
+          id?: string
+          key_stats?: Json | null
+          lineups_injuries?: Json | null
+          model: string
+          player_markets?: Json | null
+          potential_bets?: Json | null
+          quick_summary?: string | null
+          tactical_analysis?: Json | null
+        }
+        Update: {
+          advanced_insights?: Json | null
+          advanced_summary?: string | null
+          archived_at?: string
+          confidence?: number | null
+          created_at?: string | null
+          fallback_used?: boolean | null
+          fixture_id?: number
+          id?: string
+          key_stats?: Json | null
+          lineups_injuries?: Json | null
+          model?: string
+          player_markets?: Json | null
+          potential_bets?: Json | null
+          quick_summary?: string | null
+          tactical_analysis?: Json | null
+        }
+        Relationships: []
+      }
       fixtures: {
         Row: {
           away_team_id: number
@@ -130,6 +184,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fixtures_archive: {
+        Row: {
+          archived_at: string
+          away_team_id: number
+          date: string
+          goals: Json | null
+          home_team_id: number
+          id: number
+          league_id: number
+          stats_json: Json | null
+          status: string
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          archived_at?: string
+          away_team_id: number
+          date: string
+          goals?: Json | null
+          home_team_id: number
+          id: number
+          league_id: number
+          stats_json?: Json | null
+          status?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          archived_at?: string
+          away_team_id?: number
+          date?: string
+          goals?: Json | null
+          home_team_id?: number
+          id?: number
+          league_id?: number
+          stats_json?: Json | null
+          status?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: []
       }
       leagues: {
         Row: {

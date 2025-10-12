@@ -1,1 +1,19 @@
 project_id = "fsoczxlarrlecnbwghdz"
+
+[functions.sync-football-data]
+verify_jwt = false
+
+[functions.sync-football-data.cron]
+schedule = "0 */12 * * *"
+
+[functions.generate-match-insights]
+verify_jwt = false
+
+[functions.generate-match-insights.cron]
+schedule = "5 */12 * * *"
+
+[functions.create-stripe-checkout]
+verify_jwt = false
+
+[functions.create-stripe-portal]
+verify_jwt = false
