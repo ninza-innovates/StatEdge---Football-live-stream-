@@ -10,28 +10,10 @@ export function AdminSyncButton() {
   const handleSync = async () => {
     setLoading(true);
     try {
-      // First test the API connection
-      console.log('Testing API connection...');
-      const testResponse = await fetch(
-        'https://fsoczxlarrlecnbwghdz.supabase.co/functions/v1/test-api-connection',
-        { method: 'POST' }
-      );
-      
-      const testData = await testResponse.json();
-      console.log('API test result:', testData);
-      
-      if (!testData.success) {
-        toast({
-          title: "API Connection Failed",
-          description: `Status ${testData.status}: Check your RAPIDAPI_KEY in Supabase secrets`,
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // If test passes, run the sync
+      // Use the simpler initial-data-sync function
+      console.log('Starting initial data sync...');
       const response = await fetch(
-        'https://fsoczxlarrlecnbwghdz.supabase.co/functions/v1/sync-football-data',
+        'https://fsoczxlarrlecnbwghdz.supabase.co/functions/v1/initial-data-sync',
         {
           method: 'POST',
           headers: {
@@ -40,16 +22,16 @@ export function AdminSyncButton() {
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Sync failed');
-      }
-
       const data = await response.json();
+      console.log('Sync response:', data);
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Sync failed');
+      }
       
       toast({
-        title: "Sync Successful!",
-        description: `Synced ${data.synced?.fixtures || 0} fixtures, ${data.synced?.standings || 0} standings, ${data.synced?.topScorers || 0} scorers`,
+        title: "Data Synced Successfully!",
+        description: `Loaded ${data.data?.standings || 0} teams, ${data.data?.scorers || 0} scorers, ${data.data?.fixtures || 0} fixtures`,
       });
 
       // Reload the page to show new data

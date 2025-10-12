@@ -1,5 +1,8 @@
 project_id = "fsoczxlarrlecnbwghdz"
 
+[functions.initial-data-sync]
+verify_jwt = false
+
 [functions.test-api-connection]
 verify_jwt = false
 
