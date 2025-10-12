@@ -5,6 +5,15 @@ const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+// Debug: Log all available env vars (without revealing values)
+console.log('Available environment variables:', Object.keys(Deno.env.toObject()).filter(k => !k.includes('SECRET')).join(', '));
+console.log('RAPIDAPI_KEY is set:', !!RAPIDAPI_KEY);
+
+if (!RAPIDAPI_KEY) {
+  console.error('CRITICAL: RAPIDAPI_KEY not found in environment variables!');
+  console.error('Please add RAPIDAPI_KEY secret in Supabase Dashboard → Settings → Edge Functions');
+}
+
 const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
 const PREMIER_LEAGUE_ID = 39;
@@ -16,6 +25,10 @@ const corsHeaders = {
 };
 
 async function callRapidAPI(endpoint: string) {
+  if (!RAPIDAPI_KEY) {
+    throw new Error('RAPIDAPI_KEY environment variable is not set. Add it in Supabase Dashboard → Settings → Edge Functions');
+  }
+  
   const response = await fetch(`https://api-football-v1.p.rapidapi.com/v3/${endpoint}`, {
     headers: {
       'x-rapidapi-key': RAPIDAPI_KEY!,
@@ -24,7 +37,9 @@ async function callRapidAPI(endpoint: string) {
   });
   
   if (!response.ok) {
-    throw new Error(`API-Football error: ${response.status}`);
+    const errorText = await response.text();
+    console.error('API-Football error response:', errorText);
+    throw new Error(`API-Football error: ${response.status} - ${errorText}`);
   }
   
   return await response.json();
