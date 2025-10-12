@@ -33,20 +33,20 @@ export function TeamsComparison({ homeTeam, awayTeam, keyStats }: TeamsCompariso
   };
 
   return (
-    <Card className="p-6 bg-gradient-to-br from-card to-card/50">
-      <div className="grid md:grid-cols-3 gap-8 items-center">
+    <Card className="p-4 sm:p-6 bg-gradient-to-br from-card to-card/50">
+      <div className="grid md:grid-cols-3 gap-6 sm:gap-8 items-center">
         {/* Home Team */}
-        <div className="flex flex-col items-center text-center space-y-4">
+        <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
           <img 
             src={homeTeam.logo} 
             alt={homeTeam.name}
-            className="h-24 w-24 object-contain"
+            className="h-16 w-16 sm:h-24 sm:w-24 object-contain"
           />
-          <h1 className="text-2xl font-bold">{homeTeam.name}</h1>
+          <h1 className="text-lg sm:text-2xl font-bold break-words max-w-full">{homeTeam.name}</h1>
           {keyStats?.home_form && keyStats.home_form.length > 0 && (
             <div>
               <p className="text-xs text-muted-foreground mb-2">Recent Form</p>
-              <div className="flex gap-1">
+              <div className="flex gap-1 justify-center">
                 {keyStats.home_form.slice(0, 5).map((result, i) => (
                   <div key={i}>{getFormBadge(result)}</div>
                 ))}
@@ -56,13 +56,13 @@ export function TeamsComparison({ homeTeam, awayTeam, keyStats }: TeamsCompariso
         </div>
 
         {/* VS & H2H */}
-        <div className="flex flex-col items-center space-y-4">
-          <div className="text-4xl font-bold text-muted-foreground">VS</div>
+        <div className="flex flex-col items-center space-y-3 sm:space-y-4 order-first md:order-none">
+          <div className="text-3xl sm:text-4xl font-bold text-muted-foreground">VS</div>
           
           {keyStats?.h2h_record && (
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-2">Head to Head</p>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-2 sm:gap-3 text-sm">
                 <div className="text-center">
                   <div className="font-bold text-green-400">{keyStats.h2h_record.home_wins}</div>
                   <div className="text-xs text-muted-foreground">Wins</div>
@@ -81,17 +81,17 @@ export function TeamsComparison({ homeTeam, awayTeam, keyStats }: TeamsCompariso
         </div>
 
         {/* Away Team */}
-        <div className="flex flex-col items-center text-center space-y-4">
+        <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
           <img 
             src={awayTeam.logo} 
             alt={awayTeam.name}
-            className="h-24 w-24 object-contain"
+            className="h-16 w-16 sm:h-24 sm:w-24 object-contain"
           />
-          <h1 className="text-2xl font-bold">{awayTeam.name}</h1>
+          <h1 className="text-lg sm:text-2xl font-bold break-words max-w-full">{awayTeam.name}</h1>
           {keyStats?.away_form && keyStats.away_form.length > 0 && (
             <div>
               <p className="text-xs text-muted-foreground mb-2">Recent Form</p>
-              <div className="flex gap-1">
+              <div className="flex gap-1 justify-center">
                 {keyStats.away_form.slice(0, 5).map((result, i) => (
                   <div key={i}>{getFormBadge(result)}</div>
                 ))}

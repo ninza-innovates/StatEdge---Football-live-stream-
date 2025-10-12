@@ -240,11 +240,12 @@ const MatchThread = () => {
 
             <main className="pb-12">
               {/* Back Button */}
-              <div className="p-6 pb-0">
+              <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate(`/league/${league.slug}`)}
-                  className="mb-4"
+                  className="mb-4 -ml-2"
+                  size="sm"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to {league.name}
@@ -263,7 +264,7 @@ const MatchThread = () => {
               <QuickNav sections={quickNavSections} />
 
               {/* Main Content */}
-              <div className="max-w-7xl mx-auto px-6 space-y-6 mt-6">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6 mt-4 sm:mt-6">
                 {/* Teams Comparison */}
                 <div id="teams">
                   <TeamsComparison 
@@ -326,8 +327,8 @@ const MatchThread = () => {
 
                 {/* No AI Summary Message */}
                 {!aiSummary && (
-                  <div className="border rounded-xl p-12 text-center bg-card/50">
-                    <p className="text-muted-foreground">
+                  <div className="border rounded-xl p-8 sm:p-12 text-center bg-card/50">
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       AI analysis will be available 24 hours before kick-off
                     </p>
                   </div>

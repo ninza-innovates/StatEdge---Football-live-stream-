@@ -52,10 +52,10 @@ export function StatsComparison({ keyStats }: StatsComparisonProps) {
   ];
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-bold mb-6">Key Match Statistics</h2>
+    <Card className="p-4 sm:p-6">
+      <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Key Match Statistics</h2>
       
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {stats.map((stat, index) => {
           const total = stat.home + stat.away;
           const homePercent = total > 0 ? (stat.home / total) * 100 : 50;
@@ -63,10 +63,10 @@ export function StatsComparison({ keyStats }: StatsComparisonProps) {
 
           return (
             <div key={index} className="space-y-2">
-              <div className="flex justify-between text-sm font-medium">
-                <span className="text-foreground">{stat.home.toFixed(1)}</span>
-                <span className="text-muted-foreground">{stat.label}</span>
-                <span className="text-foreground">{stat.away.toFixed(1)}</span>
+              <div className="flex justify-between text-xs sm:text-sm font-medium gap-2">
+                <span className="text-foreground min-w-[2.5rem] text-right">{stat.home.toFixed(1)}</span>
+                <span className="text-muted-foreground text-center flex-1 truncate px-2">{stat.label}</span>
+                <span className="text-foreground min-w-[2.5rem] text-left">{stat.away.toFixed(1)}</span>
               </div>
               
               <div className="flex h-2 rounded-full overflow-hidden bg-muted">
