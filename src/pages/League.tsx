@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import PricingModal from "@/components/PricingModal";
 import { generateMatchSlug } from "@/utils/matchSlug";
+import { AdminSyncButton } from "@/components/AdminSyncButton";
 
 type TabType = "fixtures" | "table" | "form" | "scorers";
 
@@ -124,11 +125,14 @@ const League = () => {
           
           <main className="p-6">
             {/* League Header */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold mb-1">{league.name}</h1>
-              <p className="text-sm text-muted-foreground">
-                {new Date(league.startDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })} – {new Date(league.endDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-              </p>
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-1">{league.name}</h1>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(league.startDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })} – {new Date(league.endDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                </p>
+              </div>
+              <AdminSyncButton />
             </div>
 
             {/* Matchthread Notice Banner */}
