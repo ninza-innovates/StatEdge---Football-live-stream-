@@ -263,8 +263,8 @@ const MatchThread = () => {
               {/* Quick Navigation */}
               <QuickNav sections={quickNavSections} />
 
-              {/* Main Content - add top padding to account for fixed nav */}
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6 pt-20">
+              {/* Main Content */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6 mt-4 sm:mt-6">
                 {/* Teams Comparison */}
                 <div id="teams">
                   <TeamsComparison 
