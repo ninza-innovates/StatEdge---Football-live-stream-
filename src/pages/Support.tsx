@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet";
 import { HelpCircle, Mail, FileQuestion, MessageCircle, BookOpen } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -28,9 +29,14 @@ export default function Support() {
   ];
 
   return (
-    <SidebarProvider defaultOpen>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
+    <>
+      <Helmet>
+        <title>Support | StatEdge</title>
+      </Helmet>
+
+      <SidebarProvider defaultOpen>
+        <div className="flex min-h-screen w-full bg-background">
+          <AppSidebar />
         
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-lg px-4 md:px-6">
@@ -167,5 +173,6 @@ export default function Support() {
         </SidebarInset>
       </div>
     </SidebarProvider>
+    </>
   );
 }

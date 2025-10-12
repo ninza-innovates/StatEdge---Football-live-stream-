@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -108,9 +109,14 @@ const League = () => {
   ];
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
+    <>
+      <Helmet>
+        <title>{league.name} | StatEdge</title>
+      </Helmet>
+
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-background">
+          <AppSidebar />
         <div className="flex-1">
           <header className="h-14 border-b flex items-center px-4 bg-card/50">
             <SidebarTrigger />
@@ -229,6 +235,7 @@ const League = () => {
         </div>
       </div>
     </SidebarProvider>
+    </>
   );
 };
 

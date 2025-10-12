@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -15,9 +16,14 @@ const Dashboard = () => {
   const { user } = useAuth();
 
   return (
-    <SidebarProvider defaultOpen>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
+    <>
+      <Helmet>
+        <title>Dashboard | StatEdge</title>
+      </Helmet>
+
+      <SidebarProvider defaultOpen>
+        <div className="flex min-h-screen w-full bg-background">
+          <AppSidebar />
         
         <SidebarInset className="flex-1">
           {/* Header with Trigger */}
@@ -267,6 +273,7 @@ const Dashboard = () => {
         </SidebarInset>
       </div>
     </SidebarProvider>
+    </>
   );
 };
 

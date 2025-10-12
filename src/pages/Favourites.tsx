@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import { Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -134,9 +135,14 @@ export default function Favourites() {
   };
 
   return (
-    <SidebarProvider defaultOpen>
-      <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar />
+    <>
+      <Helmet>
+        <title>Favourites | StatEdge</title>
+      </Helmet>
+
+      <SidebarProvider defaultOpen>
+        <div className="flex min-h-screen w-full bg-background">
+          <AppSidebar />
         
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background/80 backdrop-blur-lg px-4 md:px-6">
@@ -232,5 +238,6 @@ export default function Favourites() {
         </SidebarInset>
       </div>
     </SidebarProvider>
+    </>
   );
 }
