@@ -36,15 +36,24 @@ export default function Support() {
     setLoading(true);
 
     try {
+      console.log("Form submitted with data:", formData);
+      
       // Validate form data
       const validatedData = contactSchema.parse(formData);
+      console.log("Validation passed:", validatedData);
 
       // Send email via edge function
-      const { error } = await supabase.functions.invoke("send-contact-email", {
+      console.log("Calling edge function...");
+      const { data, error } = await supabase.functions.invoke("send-contact-email", {
         body: validatedData,
       });
 
-      if (error) throw error;
+      console.log("Edge function response:", { data, error });
+
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
 
       toast({
         title: "Message Sent!",
@@ -54,6 +63,8 @@ export default function Support() {
       // Reset form
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error: any) {
+      console.error("Caught error:", error);
+      
       if (error.errors && Array.isArray(error.errors)) {
         const fieldErrors: Record<string, string> = {};
         error.errors.forEach((err: any) => {
@@ -65,7 +76,7 @@ export default function Support() {
       } else {
         toast({
           title: "Error",
-          description: "Failed to send message. Please try again.",
+          description: error?.message || "Failed to send message. Please try again.",
           variant: "destructive",
         });
       }
