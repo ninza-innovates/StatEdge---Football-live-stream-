@@ -24,7 +24,7 @@ export default function Support() {
     },
     {
       question: "What subscription plans are available?",
-      answer: "We offer Free, Weekly, and Monthly plans with varying levels of AI insight access. Premium plans include unlimited insights and advanced analytics."
+      answer: "We offer Weekly and Monthly plans with varying levels of AI insight access. Premium plans include unlimited insights and advanced analytics."
     },
   ];
 
