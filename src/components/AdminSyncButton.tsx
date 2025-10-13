@@ -1,11 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AdminSyncButton() {
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    async function checkAdminRole() {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      setIsAdmin(!error && data !== null);
+    }
+
+    checkAdminRole();
+  }, [user]);
 
   const handleSync = async () => {
     setLoading(true);
@@ -47,6 +71,10 @@ export function AdminSyncButton() {
       setLoading(false);
     }
   };
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <Button
