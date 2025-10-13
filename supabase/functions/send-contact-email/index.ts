@@ -30,7 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email to support team
     const emailResponse = await resend.emails.send({
-      from: "StatEdge Support <onboarding@resend.dev>",
+      from: "StatEdge Support <support@statedge.ai>",
       to: ["support@statedge.ai"],
       replyTo: email,
       subject: `Contact Form: ${subject}`,
@@ -49,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send confirmation to user
     await resend.emails.send({
-      from: "StatEdge Support <onboarding@resend.dev>",
+      from: "StatEdge Support <support@statedge.ai>",
       to: [email],
       subject: "We received your message!",
       html: `
