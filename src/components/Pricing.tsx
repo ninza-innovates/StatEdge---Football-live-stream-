@@ -13,10 +13,10 @@ const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
 
-  // Replace these with your actual Stripe Price IDs
+  // Stripe Price IDs
   const STRIPE_PRICE_IDS = {
-    weekly: 'price_weekly_replace_with_actual_id',
-    monthly: 'price_monthly_replace_with_actual_id'
+    weekly: 'price_1S5umL93V4MxVtg8ofpuszEl',
+    monthly: 'price_1S5umg93V4MxVtg8OZ7fGzOi'
   };
 
   const handleSubscribe = async (planType: 'weekly' | 'monthly') => {

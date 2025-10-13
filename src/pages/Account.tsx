@@ -114,7 +114,7 @@ export default function Account() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: 'price_monthly', // You'll need to set the actual price ID
+          priceId: 'price_1S5umg93V4MxVtg8OZ7fGzOi', // Monthly plan
           successUrl: `${window.location.origin}/account?success=true`,
           cancelUrl: `${window.location.origin}/account?canceled=true`,
         }),
