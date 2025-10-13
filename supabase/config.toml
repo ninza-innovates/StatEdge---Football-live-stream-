@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.create-stripe-portal]
 verify_jwt = false
+
+[functions.send-contact-email]
+verify_jwt = false

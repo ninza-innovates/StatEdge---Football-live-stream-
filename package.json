@@ -28,7 +28,8 @@
     "react-helmet": "^6.1.0",
     "react-router-dom": "^7.9.4",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
