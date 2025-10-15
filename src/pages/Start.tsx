@@ -211,14 +211,14 @@ const Start = () => {
                 <span className="text-xs text-center text-muted-foreground">Premier League</span>
               </div>
 
-              {/* La Liga */}
+              {/* EFL Championship */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
                 <img 
-                  src="/lovable-uploads/b7b6b688-263b-4c80-bfb8-891ce947ed21.png" 
-                  alt="La Liga"
+                  src="/lovable-uploads/efl-championship.png" 
+                  alt="EFL Championship"
                   className="h-16 w-auto object-contain"
                 />
-                <span className="text-xs text-center text-muted-foreground">La Liga</span>
+                <span className="text-xs text-center text-muted-foreground">EFL Championship</span>
               </div>
 
               {/* Serie A */}
@@ -281,14 +281,14 @@ const Start = () => {
                 <span className="text-xs text-center text-muted-foreground">Eredivisie</span>
               </div>
 
-              {/* EFL Championship */}
+              {/* La Liga */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
                 <img 
-                  src="/lovable-uploads/efl-championship.png" 
-                  alt="EFL Championship"
+                  src="/lovable-uploads/b7b6b688-263b-4c80-bfb8-891ce947ed21.png" 
+                  alt="La Liga"
                   className="h-16 w-auto object-contain"
                 />
-                <span className="text-xs text-center text-muted-foreground">EFL Championship</span>
+                <span className="text-xs text-center text-muted-foreground">La Liga</span>
               </div>
 
               {/* Primeira Liga (if you have it) - using a placeholder */}
