@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { TrendingUp, Zap, Shield, CheckCircle2, Clock, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet';
+import logoIcon from '@/assets/logo-icon-transparent.png';
 
 interface MatchPreview {
   id: string;
@@ -126,7 +127,7 @@ const Start = () => {
         <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center justify-between px-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-primary" />
+              <img src={logoIcon} alt="StatEdge" className="h-8 w-8" />
               <span className="text-lg font-bold text-foreground">StatEdge</span>
             </div>
             <Button onClick={handleSignUpClick} size="sm" className="btn-gradient-primary">
@@ -155,7 +156,7 @@ const Start = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button onClick={handleSignUpClick} size="lg" className="btn-gradient-primary h-14 px-8 text-lg">
-                Start Free Trial
+                Get Started Now
               </Button>
             </div>
 
@@ -180,6 +181,120 @@ const Start = () => {
               <div>
                 <div className="text-2xl md:text-3xl font-bold text-primary">85%</div>
                 <div className="text-xs md:text-sm text-muted-foreground mt-1">Accuracy Rate</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Leagues We Cover */}
+        <section className="px-4 py-12 bg-card/30">
+          <div className="container mx-auto max-w-4xl">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                Leagues We Cover
+              </h2>
+              <p className="text-muted-foreground">
+                Comprehensive AI analysis across all major football leagues
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {/* Premier League */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/d3dec733-3b64-497d-b80a-707d0096ce57.png" 
+                  alt="Premier League"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">Premier League</span>
+              </div>
+
+              {/* La Liga */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/b7b6b688-263b-4c80-bfb8-891ce947ed21.png" 
+                  alt="La Liga"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">La Liga</span>
+              </div>
+
+              {/* Serie A */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/f7ed4810-3f2d-469d-8988-45a2b3194876.png" 
+                  alt="Serie A"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">Serie A</span>
+              </div>
+
+              {/* Bundesliga */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/6c102d89-cba1-40c5-9221-d370e01d753f.png" 
+                  alt="Bundesliga"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">Bundesliga</span>
+              </div>
+
+              {/* Ligue 1 */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/a818f2a0-c95a-45a3-af9d-1b2e08abf969.png" 
+                  alt="Ligue 1"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">Ligue 1</span>
+              </div>
+
+              {/* Champions League */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/3686a251-497b-4adb-93cb-f72c8dbbb985.png" 
+                  alt="Champions League"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">Champions League</span>
+              </div>
+
+              {/* Europa League */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/6f221313-1a4f-48b1-b8a4-f78e58aae314.png" 
+                  alt="Europa League"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">Europa League</span>
+              </div>
+
+              {/* Eredivisie */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/8c819926-2467-4716-841f-371509d5e9ef.png" 
+                  alt="Eredivisie"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">Eredivisie</span>
+              </div>
+
+              {/* MLS */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
+                <img 
+                  src="/lovable-uploads/a4946fd6-0ed8-4aa7-a5e5-213cbf4240b0.png" 
+                  alt="MLS"
+                  className="h-16 w-auto object-contain"
+                />
+                <span className="text-xs text-center text-muted-foreground">MLS</span>
+              </div>
+
+              {/* Primeira Liga (if you have it) - using a placeholder */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift opacity-60">
+                <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center">
+                  <TrendingUp className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <span className="text-xs text-center text-muted-foreground">+ More</span>
               </div>
             </div>
           </div>
@@ -325,7 +440,7 @@ const Start = () => {
                 </div>
               </div>
 
-              <Button onClick={handleSignUpClick} size="lg" className="btn-gradient-primary h-14 px-12 text-lg w-full md:w-auto">
+              <Button onClick={handleSignUpClick} size="lg" className="btn-gradient-primary h-14 px-8 md:px-12 text-base md:text-lg w-full md:w-auto whitespace-nowrap">
                 Get Started - $4.99/week
               </Button>
               
@@ -338,8 +453,8 @@ const Start = () => {
 
         {/* Sticky Bottom CTA Bar (Mobile) */}
         <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
-          <Button onClick={handleSignUpClick} className="btn-gradient-primary w-full h-12 text-base">
-            Start Free Trial - $4.99/week
+          <Button onClick={handleSignUpClick} className="btn-gradient-primary w-full h-12 text-sm whitespace-nowrap">
+            Get Started - $4.99/week
           </Button>
         </div>
 
