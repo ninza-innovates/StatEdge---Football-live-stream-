@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { TrendingUp, Zap, Shield, CheckCircle2, Clock, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet';
-import logoIcon from '@/assets/logo-icon-transparent.png';
 
 interface MatchPreview {
   id: string;
@@ -126,9 +125,12 @@ const Start = () => {
         {/* Sticky Header */}
         <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center justify-between px-4">
-            <div className="flex items-center gap-2">
-              <img src={logoIcon} alt="StatEdge" className="h-8 w-8" />
-              <span className="text-lg font-bold text-foreground">StatEdge</span>
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/dd09e007-2423-4091-b113-8404a07c3b63.png" 
+                alt="StatEdge" 
+                className="h-24 w-auto"
+              />
             </div>
             <Button onClick={handleSignUpClick} size="sm" className="btn-gradient-primary">
               Sign Up
@@ -140,7 +142,7 @@ const Start = () => {
         <section className="relative px-4 pt-12 pb-8 md:pt-20 md:pb-12">
           <div className="container mx-auto max-w-4xl text-center">
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-              🔥 10,000+ Active Users
+              🔥 1000+ Active Users
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
@@ -405,7 +407,7 @@ const Start = () => {
                 <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <Users className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">10,000+ Users</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">1000+ Users</h3>
                 <p className="text-sm text-muted-foreground">
                   Join thousands making smarter predictions daily
                 </p>
@@ -422,7 +424,7 @@ const Start = () => {
                 Ready to Start Winning?
               </h2>
               <p className="text-muted-foreground mb-6">
-                Join 10,000+ users getting AI-powered match insights
+                Join 1000+ users getting AI-powered match insights
               </p>
               
               <div className="space-y-3 mb-6">
@@ -464,7 +466,7 @@ const Start = () => {
             <DialogHeader>
               <DialogTitle className="text-2xl">Wait! Don't Miss Out 🎯</DialogTitle>
               <DialogDescription className="text-base pt-4">
-                Join 10,000+ users who are already making smarter predictions with AI-powered insights.
+                Join 1000+ users who are already making smarter predictions with AI-powered insights.
               </DialogDescription>
             </DialogHeader>
             
