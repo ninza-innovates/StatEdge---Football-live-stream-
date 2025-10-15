@@ -13,7 +13,7 @@ interface MatchPreview {
   home_team_name: string;
   away_team_name: string;
   league_name: string;
-  fixture_date: string;
+  date: string;
 }
 
 const Start = () => {
@@ -52,14 +52,14 @@ const Start = () => {
         .from('fixtures')
         .select(`
           id,
-          fixture_date,
+          date,
           home_team:teams!fixtures_home_team_id_fkey(name),
           away_team:teams!fixtures_away_team_id_fkey(name),
           league:leagues!fixtures_league_id_fkey(name)
         `)
-        .gte('fixture_date', new Date().toISOString())
-        .eq('status', 'Not Started')
-        .order('fixture_date', { ascending: true })
+        .gte('date', new Date().toISOString())
+        .eq('status', 'NS')
+        .order('date', { ascending: true })
         .limit(3);
 
       if (error) throw error;
@@ -69,7 +69,7 @@ const Start = () => {
         home_team_name: match.home_team?.name || 'TBD',
         away_team_name: match.away_team?.name || 'TBD',
         league_name: match.league?.name || 'Unknown',
-        fixture_date: match.fixture_date,
+        date: match.date,
       }));
 
       setFeaturedMatches(matches);
@@ -339,7 +339,7 @@ const Start = () => {
                         {match.league_name}
                       </Badge>
                       <div className="text-sm text-muted-foreground">
-                        {formatMatchDate(match.fixture_date)} • {formatMatchTime(match.fixture_date)}
+                        {formatMatchDate(match.date)} • {formatMatchTime(match.date)}
                       </div>
                     </div>
                     
