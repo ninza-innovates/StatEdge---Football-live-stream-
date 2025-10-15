@@ -271,14 +271,14 @@ const Start = () => {
                 <span className="text-xs text-center text-muted-foreground">Europa League</span>
               </div>
 
-              {/* Eredivisie */}
+              {/* EFL League One */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
                 <img 
-                  src="/lovable-uploads/8c819926-2467-4716-841f-371509d5e9ef.png" 
-                  alt="Eredivisie"
+                  src="/lovable-uploads/efl-league-one.png" 
+                  alt="EFL League One"
                   className="h-16 w-auto object-contain"
                 />
-                <span className="text-xs text-center text-muted-foreground">Eredivisie</span>
+                <span className="text-xs text-center text-muted-foreground">EFL League One</span>
               </div>
 
               {/* La Liga */}

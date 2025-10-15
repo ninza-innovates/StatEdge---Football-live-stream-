@@ -48,11 +48,11 @@ const LeagueLogos = () => {
             />
           </div>
           
-          {/* Eredivisie */}
+          {/* EFL League One */}
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/8c819926-2467-4716-841f-371509d5e9ef.png" 
-              alt="Eredivisie logo"
+              src="/lovable-uploads/efl-league-one.png" 
+              alt="EFL League One logo"
               className="h-16 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
             />
           </div>
