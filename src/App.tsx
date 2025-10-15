@@ -4,6 +4,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { Toaster } from "@/components/ui/toaster";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Start from "./pages/Start";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import League from "./pages/League";
@@ -19,6 +20,7 @@ const App = () => {
         <SubscriptionProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/start" element={<Start />} />
             <Route path="/auth" element={<Auth />} />
             <Route 
               path="/dashboard" 
