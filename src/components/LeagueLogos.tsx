@@ -66,11 +66,11 @@ const LeagueLogos = () => {
             />
           </div>
           
-          {/* MLS */}
+          {/* EFL Championship */}
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/a4946fd6-0ed8-4aa7-a5e5-213cbf4240b0.png" 
-              alt="MLS logo"
+              src="/lovable-uploads/efl-championship.png" 
+              alt="EFL Championship logo"
               className="h-16 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
             />
           </div>
