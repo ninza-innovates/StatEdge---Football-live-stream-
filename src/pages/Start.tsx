@@ -221,14 +221,14 @@ const Start = () => {
                 <span className="text-xs text-center text-muted-foreground">EFL Championship</span>
               </div>
 
-              {/* Serie A */}
+              {/* EFL League One */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
                 <img 
-                  src="/lovable-uploads/f7ed4810-3f2d-469d-8988-45a2b3194876.png" 
-                  alt="Serie A"
+                  src="/lovable-uploads/efl-league-one.png" 
+                  alt="EFL League One"
                   className="h-16 w-auto object-contain"
                 />
-                <span className="text-xs text-center text-muted-foreground">Serie A</span>
+                <span className="text-xs text-center text-muted-foreground">EFL League One</span>
               </div>
 
               {/* Bundesliga */}
@@ -271,14 +271,14 @@ const Start = () => {
                 <span className="text-xs text-center text-muted-foreground">Europa League</span>
               </div>
 
-              {/* EFL League One */}
+              {/* Serie A */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
                 <img 
-                  src="/lovable-uploads/efl-league-one.png" 
-                  alt="EFL League One"
+                  src="/lovable-uploads/f7ed4810-3f2d-469d-8988-45a2b3194876.png" 
+                  alt="Serie A"
                   className="h-16 w-auto object-contain"
                 />
-                <span className="text-xs text-center text-muted-foreground">EFL League One</span>
+                <span className="text-xs text-center text-muted-foreground">Serie A</span>
               </div>
 
               {/* La Liga */}
