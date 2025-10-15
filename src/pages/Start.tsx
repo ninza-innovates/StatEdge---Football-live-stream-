@@ -281,14 +281,14 @@ const Start = () => {
                 <span className="text-xs text-center text-muted-foreground">Eredivisie</span>
               </div>
 
-              {/* MLS */}
+              {/* EFL Championship */}
               <div className="flex flex-col items-center gap-2 p-4 rounded-lg glass-card hover-lift">
                 <img 
-                  src="/lovable-uploads/a4946fd6-0ed8-4aa7-a5e5-213cbf4240b0.png" 
-                  alt="MLS"
+                  src="/lovable-uploads/efl-championship.png" 
+                  alt="EFL Championship"
                   className="h-16 w-auto object-contain"
                 />
-                <span className="text-xs text-center text-muted-foreground">MLS</span>
+                <span className="text-xs text-center text-muted-foreground">EFL Championship</span>
               </div>
 
               {/* Primeira Liga (if you have it) - using a placeholder */}
