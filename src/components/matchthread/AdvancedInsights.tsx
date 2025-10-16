@@ -31,30 +31,30 @@ interface AdvancedInsightsProps {
 
 export function AdvancedInsights({ insights }: AdvancedInsightsProps) {
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-bold mb-6">Advanced Insights</h2>
+    <Card className="p-4 sm:p-6">
+      <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Advanced Insights</h2>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 sm:gap-6">
         {/* Attack Zones */}
         {insights.attack_zones && (
           <div>
-            <h3 className="font-semibold mb-4">Attack Zones Distribution</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+            <h3 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4">Attack Zones Distribution</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {insights.attack_zones.home && (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">Home Team</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Home Team</p>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="p-3 rounded-lg bg-primary/10 text-center">
-                      <div className="text-2xl font-bold text-primary">{insights.attack_zones.home.left}%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Left</div>
+                    <div className="p-2 sm:p-3 rounded-lg bg-primary/10 text-center">
+                      <div className="text-lg sm:text-2xl font-bold text-primary">{insights.attack_zones.home.left}%</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">Left</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-primary/20 text-center">
-                      <div className="text-2xl font-bold text-primary">{insights.attack_zones.home.center}%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Center</div>
+                    <div className="p-2 sm:p-3 rounded-lg bg-primary/20 text-center">
+                      <div className="text-lg sm:text-2xl font-bold text-primary">{insights.attack_zones.home.center}%</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">Center</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-primary/10 text-center">
-                      <div className="text-2xl font-bold text-primary">{insights.attack_zones.home.right}%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Right</div>
+                    <div className="p-2 sm:p-3 rounded-lg bg-primary/10 text-center">
+                      <div className="text-lg sm:text-2xl font-bold text-primary">{insights.attack_zones.home.right}%</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">Right</div>
                     </div>
                   </div>
                 </div>
@@ -62,19 +62,19 @@ export function AdvancedInsights({ insights }: AdvancedInsightsProps) {
 
               {insights.attack_zones.away && (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">Away Team</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Away Team</p>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="p-3 rounded-lg bg-destructive/10 text-center">
-                      <div className="text-2xl font-bold text-destructive">{insights.attack_zones.away.left}%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Left</div>
+                    <div className="p-2 sm:p-3 rounded-lg bg-destructive/10 text-center">
+                      <div className="text-lg sm:text-2xl font-bold text-destructive">{insights.attack_zones.away.left}%</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">Left</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-destructive/20 text-center">
-                      <div className="text-2xl font-bold text-destructive">{insights.attack_zones.away.center}%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Center</div>
+                    <div className="p-2 sm:p-3 rounded-lg bg-destructive/20 text-center">
+                      <div className="text-lg sm:text-2xl font-bold text-destructive">{insights.attack_zones.away.center}%</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">Center</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-destructive/10 text-center">
-                      <div className="text-2xl font-bold text-destructive">{insights.attack_zones.away.right}%</div>
-                      <div className="text-xs text-muted-foreground mt-1">Right</div>
+                    <div className="p-2 sm:p-3 rounded-lg bg-destructive/10 text-center">
+                      <div className="text-lg sm:text-2xl font-bold text-destructive">{insights.attack_zones.away.right}%</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">Right</div>
                     </div>
                   </div>
                 </div>
@@ -85,20 +85,20 @@ export function AdvancedInsights({ insights }: AdvancedInsightsProps) {
 
         {/* Goal Timing Patterns */}
         {insights.goal_timing_patterns && (
-          <div className="border-t pt-6">
-            <h3 className="font-semibold mb-4">Goal Timing Patterns</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="border-t pt-4 sm:pt-6">
+            <h3 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4">Goal Timing Patterns</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {insights.goal_timing_patterns.home && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-3">Home Team</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-3">Home Team</p>
                   <div className="flex gap-2">
-                    <div className="flex-1 p-3 rounded-lg bg-primary/10 text-center">
-                      <div className="text-xl font-bold text-primary">{insights.goal_timing_patterns.home.first_half}</div>
-                      <div className="text-xs text-muted-foreground mt-1">1st Half</div>
+                    <div className="flex-1 p-2 sm:p-3 rounded-lg bg-primary/10 text-center">
+                      <div className="text-lg sm:text-xl font-bold text-primary">{insights.goal_timing_patterns.home.first_half}</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">1st Half</div>
                     </div>
-                    <div className="flex-1 p-3 rounded-lg bg-primary/10 text-center">
-                      <div className="text-xl font-bold text-primary">{insights.goal_timing_patterns.home.second_half}</div>
-                      <div className="text-xs text-muted-foreground mt-1">2nd Half</div>
+                    <div className="flex-1 p-2 sm:p-3 rounded-lg bg-primary/10 text-center">
+                      <div className="text-lg sm:text-xl font-bold text-primary">{insights.goal_timing_patterns.home.second_half}</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">2nd Half</div>
                     </div>
                   </div>
                 </div>
@@ -106,15 +106,15 @@ export function AdvancedInsights({ insights }: AdvancedInsightsProps) {
 
               {insights.goal_timing_patterns.away && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-3">Away Team</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-3">Away Team</p>
                   <div className="flex gap-2">
-                    <div className="flex-1 p-3 rounded-lg bg-destructive/10 text-center">
-                      <div className="text-xl font-bold text-destructive">{insights.goal_timing_patterns.away.first_half}</div>
-                      <div className="text-xs text-muted-foreground mt-1">1st Half</div>
+                    <div className="flex-1 p-2 sm:p-3 rounded-lg bg-destructive/10 text-center">
+                      <div className="text-lg sm:text-xl font-bold text-destructive">{insights.goal_timing_patterns.away.first_half}</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">1st Half</div>
                     </div>
-                    <div className="flex-1 p-3 rounded-lg bg-destructive/10 text-center">
-                      <div className="text-xl font-bold text-destructive">{insights.goal_timing_patterns.away.second_half}</div>
-                      <div className="text-xs text-muted-foreground mt-1">2nd Half</div>
+                    <div className="flex-1 p-2 sm:p-3 rounded-lg bg-destructive/10 text-center">
+                      <div className="text-lg sm:text-xl font-bold text-destructive">{insights.goal_timing_patterns.away.second_half}</div>
+                      <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">2nd Half</div>
                     </div>
                   </div>
                 </div>
@@ -125,15 +125,15 @@ export function AdvancedInsights({ insights }: AdvancedInsightsProps) {
 
         {/* Defensive Weaknesses */}
         {insights.defensive_weaknesses && (insights.defensive_weaknesses.home || insights.defensive_weaknesses.away) && (
-          <div className="border-t pt-6">
-            <h3 className="font-semibold mb-4">Defensive Weaknesses</h3>
-            <div className="grid md:grid-cols-2 gap-6">
+          <div className="border-t pt-4 sm:pt-6">
+            <h3 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4">Defensive Weaknesses</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {insights.defensive_weaknesses.home && insights.defensive_weaknesses.home.length > 0 && (
-                <div className="p-4 rounded-lg bg-card/50 border">
-                  <p className="text-sm font-medium mb-2">Home Team</p>
+                <div className="p-3 sm:p-4 rounded-lg bg-card/50 border">
+                  <p className="text-xs sm:text-sm font-medium mb-2">Home Team</p>
                   <ul className="space-y-1">
                     {insights.defensive_weaknesses.home.map((weakness, i) => (
-                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                      <li key={i} className="text-xs sm:text-sm text-muted-foreground flex items-start gap-2">
                         <span className="text-destructive mt-0.5">•</span>
                         <span>{weakness}</span>
                       </li>
@@ -143,11 +143,11 @@ export function AdvancedInsights({ insights }: AdvancedInsightsProps) {
               )}
 
               {insights.defensive_weaknesses.away && insights.defensive_weaknesses.away.length > 0 && (
-                <div className="p-4 rounded-lg bg-card/50 border">
-                  <p className="text-sm font-medium mb-2">Away Team</p>
+                <div className="p-3 sm:p-4 rounded-lg bg-card/50 border">
+                  <p className="text-xs sm:text-sm font-medium mb-2">Away Team</p>
                   <ul className="space-y-1">
                     {insights.defensive_weaknesses.away.map((weakness, i) => (
-                      <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                      <li key={i} className="text-xs sm:text-sm text-muted-foreground flex items-start gap-2">
                         <span className="text-destructive mt-0.5">•</span>
                         <span>{weakness}</span>
                       </li>

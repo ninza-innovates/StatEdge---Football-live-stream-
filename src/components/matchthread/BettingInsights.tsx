@@ -23,19 +23,19 @@ export function BettingInsights({ bets }: BettingInsightsProps) {
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-start justify-between mb-6">
+    <Card className="p-4 sm:p-6">
+      <div className="flex items-start justify-between mb-4 sm:mb-6">
         <div>
-          <h2 className="text-xl font-bold mb-2">Betting Insights</h2>
-          <p className="text-sm text-muted-foreground">AI-powered betting suggestions based on match analysis</p>
+          <h2 className="text-lg sm:text-xl font-bold mb-1 sm:mb-2">Betting Insights</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">AI-powered betting suggestions based on match analysis</p>
         </div>
-        <TrendingUp className="h-5 w-5 text-primary" />
+        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
       </div>
 
-      <div className="mb-6 p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
+      <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+        <div className="flex items-start gap-2 sm:gap-3">
+          <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+          <div className="text-xs sm:text-sm">
             <p className="font-medium text-orange-400 mb-1">Responsible Gambling</p>
             <p className="text-muted-foreground">
               These insights are for informational purposes only. Please gamble responsibly and within your means.
@@ -44,20 +44,22 @@ export function BettingInsights({ bets }: BettingInsightsProps) {
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3 sm:gap-4">
         {bets.map((bet, index) => (
           <div 
             key={index}
-            className="p-4 rounded-lg bg-gradient-to-br from-card to-card/50 border hover:border-primary/50 transition-colors"
+            className="p-3 sm:p-4 rounded-lg bg-gradient-to-br from-card to-card/50 border hover:border-primary/50 transition-colors"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-foreground mb-1">{bet.market}</h3>
-                <p className="text-sm text-primary font-medium">{bet.selection}</p>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-2 sm:mb-3">
+              <div className="flex-1">
+                <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">{bet.market}</h3>
+                <p className="text-xs sm:text-sm text-primary font-medium">{bet.selection}</p>
               </div>
-              {getConfidenceBadge(bet.confidence)}
+              <div className="flex-shrink-0">
+                {getConfidenceBadge(bet.confidence)}
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">{bet.reasoning}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{bet.reasoning}</p>
           </div>
         ))}
       </div>

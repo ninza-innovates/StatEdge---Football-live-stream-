@@ -181,7 +181,7 @@ const MatchThread = () => {
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
-            <main className="p-6">
+            <main className="p-4 lg:p-6">
               <Skeleton className="h-8 w-48 mb-4" />
               <Skeleton className="h-64 w-full mb-4" />
               <Skeleton className="h-96 w-full" />
@@ -201,7 +201,7 @@ const MatchThread = () => {
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
-            <main className="p-6">
+            <main className="p-4 lg:p-6">
               <Button variant="ghost" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Go Back
@@ -254,7 +254,8 @@ const MatchThread = () => {
                   size="sm"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to {league.name}
+                  <span className="hidden sm:inline">Back to {league.name}</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
               </div>
 
@@ -333,7 +334,7 @@ const MatchThread = () => {
 
                 {/* No AI Summary Message */}
                 {!aiSummary && (
-                  <div className="border rounded-xl p-8 sm:p-12 text-center bg-card/50">
+                  <div className="border rounded-xl p-6 sm:p-8 lg:p-12 text-center bg-card/50">
                     <p className="text-sm sm:text-base text-muted-foreground">
                       AI analysis will be available 24 hours before kick-off
                     </p>
