@@ -43,15 +43,15 @@ export function AppSidebar() {
   const fetchLeagues = async () => {
     try {
       const { data, error } = await supabase
-        .from('leagues')
-        .select('id, name, slug, logo, is_active, order_index')
-        .eq('is_active', true)
-        .order('order_index', { ascending: true });
+        .from("leagues")
+        .select("id, name, slug, logo, is_active, order_index")
+        .eq("is_active", true)
+        .order("order_index", { ascending: true });
 
       if (error) throw error;
       setLeagues(data || []);
     } catch (error) {
-      console.error('Error fetching leagues:', error);
+      console.error("Error fetching leagues:", error);
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    navigate("/");
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -68,18 +68,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50 bg-background/95 backdrop-blur-xl">
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
-          <img 
-            src="/favicon.png" 
-            alt="StatEdge.ai Logo" 
-            className="h-8 w-8 flex-shrink-0 rounded-lg"
-          />
+          <img src="/favicon.png" alt="StatEdge.ai Logo" className="h-8 w-8 flex-shrink-0 rounded-lg" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
               StatEdge.ai
             </h1>
-            <p className="text-xs text-muted-foreground font-medium">
-              AI Football Insights
-            </p>
+            <p className="text-xs text-muted-foreground font-medium">AI Football Insights</p>
           </div>
         </div>
       </SidebarHeader>
@@ -90,9 +84,9 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => navigate('/dashboard')}
-                  isActive={isActive('/dashboard')}
+                <SidebarMenuButton
+                  onClick={() => navigate("/dashboard")}
+                  isActive={isActive("/dashboard")}
                   tooltip="Dashboard"
                   className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
@@ -108,7 +102,9 @@ export function AppSidebar() {
 
         {/* Leagues */}
         <SidebarGroup className="px-3 py-1">
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">Leagues</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">
+            Leagues
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {loading ? (
@@ -124,11 +120,7 @@ export function AppSidebar() {
                       tooltip={league.name}
                       className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                     >
-                      <img 
-                        src={league.logo} 
-                        alt={league.name}
-                        className="h-4 w-4 object-contain"
-                      />
+                      <img src={league.logo} alt={league.name} className="h-4 w-4 object-contain" />
                       <span className="truncate text-sm">{league.name}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -146,8 +138,8 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/favourites')}
-                  isActive={isActive('/favourites')}
+                  onClick={() => navigate("/favourites")}
+                  isActive={isActive("/favourites")}
                   tooltip="Favourites"
                   className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
@@ -157,8 +149,8 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/account')}
-                  isActive={isActive('/account')}
+                  onClick={() => navigate("/account")}
+                  isActive={isActive("/account")}
                   tooltip="Account"
                   className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
@@ -168,8 +160,8 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/support')}
-                  isActive={isActive('/support')}
+                  onClick={() => navigate("/support")}
+                  isActive={isActive("/support")}
                   tooltip="Support"
                   className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                 >
@@ -190,15 +182,13 @@ export function AppSidebar() {
               <User className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">
-                {user?.email || 'User'}
-              </p>
+              <p className="text-sm font-semibold truncate">{user?.email || "User"}</p>
               <p className="text-xs text-muted-foreground font-medium">
-                {subscriptionTier ? `${subscriptionTier} Plan` : 'Free Plan'}
+                {subscriptionTier ? `${subscriptionTier} Plan` : "Free Plan"}
               </p>
             </div>
           </div>
-          
+
           {/* Sign Out Button */}
           <Button
             variant="ghost"
