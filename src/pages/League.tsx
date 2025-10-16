@@ -272,11 +272,12 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
         .select("*, goals")
         .eq("league_id", leagueId)
         .eq("status", "NS")
-        .gte("date", new Date().toISOString())
+        // .gte("date", new Date().toISOString())
         .order("date", { ascending: true })
         .limit(4);
 
       if (fixturesError) throw fixturesError;
+      console.log("FixturesData", fixturesData);
 
       // Fetch all teams
       const { data: teamsData, error: teamsError } = await supabase
@@ -426,7 +427,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
           return (
             <div
               key={fixture.id}
-              className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
+              className="border rounded-xl lg:p-6 p-1 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm text-muted-foreground font-medium">
@@ -447,12 +448,12 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
               <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-center">
                 {/* Home Team */}
-                <div className="flex items-center gap-4 justify-end">
+                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1 lg:justify-end justif-center">
                   <div className="text-right">
-                    <h3 className="text-lg font-bold">{homeTeam?.name || "Unknown"}</h3>
+                    <h3 className="lg:text-lg text-sm sm:text-base font-bold">{homeTeam?.name || "Unknown"}</h3>
                   </div>
                   {homeTeam?.logo && (
-                    <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center flex-shrink-0">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-background/50 p-1 sm:p-2 flex items-center justify-center flex-shrink-0">
                       <img
                         src={homeTeam.logo}
                         alt={homeTeam.name}
@@ -463,20 +464,20 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                 </div>
 
                 {/* Score or VS */}
-                <div className="flex items-center justify-center min-w-[80px]">
+                <div className="flex items-center justify-center lg:min-w-[80px] min-w-[20px] sm:min-w-[40px]">
                   {fixture.status === 'FT' && hasScore ? (
                     <div className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
                       {fixture.goals.home} - {fixture.goals.away}
                     </div>
                   ) : (
-                    <div className="text-lg font-semibold text-muted-foreground">VS</div>
+                    <div className="lg:text-lg sm:text-base text-sm font-semibold text-muted-foreground">VS</div>
                   )}
                 </div>
 
                 {/* Away Team */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1">
                   {awayTeam?.logo && (
-                    <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center flex-shrink-0">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-background/50 p-1 sm:p-2 flex items-center justify-center flex-shrink-0">
                       <img
                         src={awayTeam.logo}
                         alt={awayTeam.name}
@@ -485,7 +486,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                     </div>
                   )}
                   <div>
-                    <h3 className="text-lg font-bold">{awayTeam?.name || "Unknown"}</h3>
+                    <h3 className="lg:text-lg  sm:text-base text-sm font-bold">{awayTeam?.name || "Unknown"}</h3>
                   </div>
                 </div>
               </div>
@@ -515,7 +516,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                   {isSubscribed ? (
                     <Button 
                       size="sm" 
-                      className="group bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold"
+                      className="group bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold text-xs sm:text-sm"
                       onClick={() => {
                         if (homeTeam && awayTeam) {
                           const matchSlug = generateMatchSlug(homeTeam.name, awayTeam.name);
@@ -523,18 +524,20 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                         }
                       }}
                     >
-                      View Matchthread
-                      <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
+                      <span className="hidden sm:inline">View Matchthread</span>
+                      <span className="sm:hidden">Matchthread</span>
+                      <span className="ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
                     </Button>
                   ) : (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="group font-semibold"
+                      className="group font-semibold text-xs sm:text-sm"
                       onClick={() => setPricingModalOpen(true)}
                     >
-                      <Lock className="h-4 w-4 mr-2" />
-                      View Matchthread
+                      <Lock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">View Matchthread</span>
+                      <span className="sm:hidden">Matchthread</span>
                     </Button>
                   )}
                 </div>

@@ -84,7 +84,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="overflow-hidden">
+      <SidebarContent className="overflow-auto">
         {/* Main Navigation */}
         <SidebarGroup className="px-3 py-2">
           <SidebarGroupContent>

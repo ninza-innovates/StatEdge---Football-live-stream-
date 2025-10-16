@@ -6,6 +6,28 @@
 All colors MUST be HSL.
 */
 
+/* width */
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #16182b;
+  border-radius: 5px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #000;
+  border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #0f0e0e;
+}
+
 @layer base {
   :root {
     /* StatEdge.ai Dark Theme */
