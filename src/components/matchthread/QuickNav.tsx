@@ -1,49 +1,82 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import React from "react";
+import { useState, useEffect } from "react";
+import { ChevronRight } from "lucide-react";
 
 interface QuickNavProps {
-  sections: { id: string; label: string; icon?: React.ReactNode }[];
+  sections: Array<{
+    id: string;
+    label: string;
+    icon?: React.ReactNode;
+  }>;
 }
 
 export function QuickNav({ sections }: QuickNavProps) {
-  const scrollTo = (id: string) => {
+  const [activeSection, setActiveSection] = useState<string>("");
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 200;
+      for (const section of sections) {
+        const el = document.getElementById(section.id);
+        if (!el) continue;
+        const { offsetTop, offsetHeight } = el;
+        if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+          setActiveSection(section.id);
+          break;
+        }
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [sections]);
+
+  const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    // Account for sticky header height (~56px)
-    const y = el.getBoundingClientRect().top + window.scrollY - 64;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    const offset = 100;
+    const elPos = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: elPos, behavior: "smooth" });
   };
 
   return (
-    <div
-      className="sticky top-14 z-50 bg-background border-b shadow-sm relative"
-      style={{ position: "-webkit-sticky" }}
-    >
+    <div className="sticky top-14 z-50 w-full bg-background border-b shadow-sm relative">
+      {/* padding container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* 
-          The scroller itself can overflow horizontally, but not the page.
-          -mx-4 sm:-mx-0 allows edge-to-edge scrolling on mobile 
-          px-4 sm:px-0 maintains visual padding
-        */}
-        <div className="flex overflow-x-auto py-3 gap-2 -mx-4 sm:-mx-0 px-4 sm:px-0 scrollbar-hide">
-          {sections.map((s) => (
-            <Button
-              key={s.id}
-              variant="secondary"
-              size="sm"
-              className={cn("shrink-0 rounded-full whitespace-nowrap", "px-3 sm:px-4 py-2", "text-xs sm:text-sm")}
-              onClick={() => scrollTo(s.id)}
+        {/* The ONLY scroll container */}
+        <div
+          className="
+            -mx-4 px-4
+            flex gap-2 py-3 min-h-[56px]
+            overflow-x-auto scrollbar-none
+            snap-x snap-mandatory scroll-smooth
+            touch-pan-x overscroll-x-contain
+          "
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => scrollToSection(section.id)}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap
+                transition-all duration-200 flex-shrink-0 snap-start
+                ${
+                  activeSection === section.id
+                    ? "bg-primary text-primary-foreground shadow-md scale-105"
+                    : "bg-card hover:bg-accent text-foreground border"
+                }
+              `}
             >
-              {s.icon && <span className="mr-1.5 sm:mr-2 inline-flex">{s.icon}</span>}
-              {s.label}
-            </Button>
+              {section.icon && <span className="h-4 w-4">{section.icon}</span>}
+              <span className="text-sm font-medium">{section.label}</span>
+              {activeSection === section.id && <ChevronRight className="h-3 w-3 animate-pulse" />}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Gradient indicator showing more content is available (mobile only) */}
-      <div className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent" />
+      {/* right fade, doesn't block touches */}
+      <div className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent" />
     </div>
   );
 }
