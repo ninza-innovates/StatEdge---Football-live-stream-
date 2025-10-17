@@ -173,7 +173,7 @@ const MatchThread = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
@@ -254,7 +254,7 @@ const MatchThread = () => {
               </div>
 
               {/* Quick Navigation (allow its own horizontal scroll on tiny screens) */}
-              <div className="px-4 sm:px-6">
+              <div className="px-4 sm:px-6 overflow-x-auto">
                 <QuickNav sections={quickNavSections} />
               </div>
 
