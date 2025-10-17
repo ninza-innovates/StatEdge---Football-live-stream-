@@ -1,56 +1,96 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 
 interface QuickNavProps {
-  sections: Array<{
-    id: string;
-    label: string;
-    icon?: React.ReactNode;
-  }>;
+  sections: Array<{ id: string; label: string; icon?: React.ReactNode }>;
 }
 
 export function QuickNav({ sections }: QuickNavProps) {
   const [activeSection, setActiveSection] = useState<string>("");
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const startScrollLeft = useRef(0);
+
+  // mouse drag-to-scroll (touch already works natively)
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const onDown = (e: MouseEvent) => {
+      dragging.current = true;
+      el.classList.add("cursor-grabbing");
+      startX.current = e.pageX - el.offsetLeft;
+      startScrollLeft.current = el.scrollLeft;
+    };
+    const onLeave = () => {
+      dragging.current = false;
+      el.classList.remove("cursor-grabbing");
+    };
+    const onUp = () => {
+      dragging.current = false;
+      el.classList.remove("cursor-grabbing");
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      e.preventDefault();
+      const x = e.pageX - el.offsetLeft;
+      const walk = (x - startX.current) * 1; // multiplier = scroll speed
+      el.scrollLeft = startScrollLeft.current - walk;
+    };
+
+    el.addEventListener("mousedown", onDown);
+    el.addEventListener("mouseleave", onLeave);
+    el.addEventListener("mouseup", onUp);
+    el.addEventListener("mousemove", onMove);
+
+    return () => {
+      el.removeEventListener("mousedown", onDown);
+      el.removeEventListener("mouseleave", onLeave);
+      el.removeEventListener("mouseup", onUp);
+      el.removeEventListener("mousemove", onMove);
+    };
+  }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
+    const handleScrollSpy = () => {
       const scrollPosition = window.scrollY + 200;
-      for (const section of sections) {
-        const el = document.getElementById(section.id);
+      for (const s of sections) {
+        const el = document.getElementById(s.id);
         if (!el) continue;
         const { offsetTop, offsetHeight } = el;
         if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-          setActiveSection(section.id);
+          setActiveSection(s.id);
           break;
         }
       }
     };
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScrollSpy);
+    handleScrollSpy();
+    return () => window.removeEventListener("scroll", handleScrollSpy);
   }, [sections]);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
     const offset = 100;
-    const elPos = el.getBoundingClientRect().top + window.pageYOffset - offset;
-    window.scrollTo({ top: elPos, behavior: "smooth" });
+    const y = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: y, behavior: "smooth" });
   };
 
   return (
     <div className="sticky top-14 z-50 w-full bg-background border-b shadow-sm relative">
-      {/* padding container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* The ONLY scroll container */}
         <div
-          className="
-            -mx-4 px-4
-            flex gap-2 py-3 min-h-[56px]
-            overflow-x-auto scrollbar-none
-            snap-x snap-mandatory scroll-smooth
-            touch-pan-x overscroll-x-contain
-          "
+          ref={scrollerRef}
+          className={`
+            -mx-4 px-4 flex gap-2 py-3 min-h-[56px]
+            overflow-x-auto snap-x snap-mandatory scroll-smooth
+            touch-pan-x overscroll-x-contain select-none
+            cursor-grab
+            [scrollbar-width:none]                   /* Firefox hide */
+            [&::-webkit-scrollbar]:hidden            /* WebKit hide */
+          `}
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           {sections.map((section) => (
@@ -75,7 +115,6 @@ export function QuickNav({ sections }: QuickNavProps) {
         </div>
       </div>
 
-      {/* right fade, doesn't block touches */}
       <div className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent" />
     </div>
   );
