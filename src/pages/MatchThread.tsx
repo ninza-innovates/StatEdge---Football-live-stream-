@@ -171,13 +171,13 @@ const MatchThread = () => {
   if (loading || subscriptionLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
+        <div className="min-h-screen flex w-full bg-background overflow-x-hidden max-w-full">
           <AppSidebar />
-          <div className="flex-1 min-w-0">
-            <header className="h-14 border-b flex items-center px-4 bg-card/50">
+          <div className="flex-1">
+            <header className="h-14 border-b flex items-center px-4 bg-card max-w-full/50">
               <SidebarTrigger />
             </header>
-            <main className="p-4 lg:p-6 overflow-x-hidden">
+            <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">
               <Skeleton className="h-8 w-48 mb-4" />
               <Skeleton className="h-64 w-full mb-4" />
               <Skeleton className="h-96 w-full" />
