@@ -1,84 +1,46 @@
-import { useState, useEffect } from "react";
-import { ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import React from "react";
 
 interface QuickNavProps {
-  sections: Array<{
-    id: string;
-    label: string;
-    icon?: React.ReactNode;
-  }>;
+  sections: { id: string; label: string; icon?: React.ReactNode }[];
 }
 
 export function QuickNav({ sections }: QuickNavProps) {
-  const [activeSection, setActiveSection] = useState<string>("");
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + 200;
-
-      for (const section of sections) {
-        const element = document.getElementById(section.id);
-        if (element) {
-          const { offsetTop, offsetHeight } = element;
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section.id);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [sections]);
-
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 100;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth",
-      });
-    }
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // account for sticky header height (~56px)
+    const y = el.getBoundingClientRect().top + window.scrollY - 64;
+    window.scrollTo({ top: y, behavior: "smooth" });
   };
 
   return (
-    <div className="sticky top-14 z-50 bg-background border-b shadow-sm" style={{ position: '-webkit-sticky' }}>
-      <div className="max-w-7xl mx-auto px-3 sm:px-6">
-        {/* Mobile: Horizontal Scroll */}
-        <div className="flex overflow-x-auto scrollbar-hide py-3 gap-2 snap-x snap-mandatory scroll-smooth min-h-[56px]">
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => scrollToSection(section.id)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap
-                transition-all duration-200 flex-shrink-0 snap-start
-                ${
-                  activeSection === section.id
-                    ? "bg-primary text-primary-foreground shadow-md scale-105"
-                    : "bg-card hover:bg-accent text-foreground border"
-                }
-              `}
+    // IMPORTANT: clip any child overflow to prevent page-wide overflow on mobile
+    <div
+      className="sticky top-14 z-50 bg-background border-b shadow-sm relative overflow-x-hidden"
+      style={{ position: "-webkit-sticky" }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        {/* The scroller itself can overflow, not the page */}
+        <div className="flex overflow-x-auto py-3 gap-2 w-full max-w-full">
+          {sections.map((s) => (
+            <Button
+              key={s.id}
+              variant="secondary"
+              size="sm"
+              className={cn("shrink-0 rounded-full", "px-3 sm:px-4 py-2", "whitespace-nowrap")}
+              onClick={() => scrollTo(s.id)}
             >
-              {section.icon && <span className="h-4 w-4">{section.icon}</span>}
-              <span className="text-sm font-medium">{section.label}</span>
-              {activeSection === section.id && (
-                <ChevronRight className="h-3 w-3 animate-pulse" />
-              )}
-            </button>
+              {s.icon ? <span className="mr-2 inline-flex">{s.icon}</span> : null}
+              {s.label}
+            </Button>
           ))}
         </div>
       </div>
 
-      {/* Scroll Indicator - only visible on mobile */}
-      <div className="sm:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+      {/* This gradient stays inside the sticky wrapper and is clipped */}
+      <div className="sm:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent" />
     </div>
   );
 }
