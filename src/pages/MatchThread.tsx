@@ -171,13 +171,13 @@ const MatchThread = () => {
   if (loading || subscriptionLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background overflow-x-hidden max-w-full">
+        <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
-          <div className="flex-1">
-            <header className="h-14 border-b flex items-center px-4 bg-card max-w-full/50">
+          <div className="flex-1 min-w-0">
+            <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
-            <main className="p-4 lg:p-6 overflow-x-hidden max-w-full">
+            <main className="p-4 lg:p-6 overflow-x-hidden">
               <Skeleton className="h-8 w-48 mb-4" />
               <Skeleton className="h-64 w-full mb-4" />
               <Skeleton className="h-96 w-full" />
@@ -193,7 +193,7 @@ const MatchThread = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
@@ -233,19 +233,16 @@ const MatchThread = () => {
       </Helmet>
 
       <SidebarProvider>
-        {/* KEY: prevent any child from creating a wider-than-viewport box */}
         <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 overflow-x-hidden">
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
 
-            {/* Also hide overflow here as a belt-and-suspenders */}
-            <main className="pb-12 overflow-x-hidden">
+            <main className="pb-12 w-full overflow-x-hidden">
               {/* Back Button */}
-              <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
-                {/* Removed -ml-2 which pushed content outside the viewport on mobile */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6">
                 <Button variant="ghost" onClick={() => navigate(`/league/${league.slug}`)} className="mb-4" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Back to {league.name}</span>
@@ -253,10 +250,8 @@ const MatchThread = () => {
                 </Button>
               </div>
 
-              {/* Quick Navigation (allow its own horizontal scroll on tiny screens) */}
-              <div className="px-4 sm:px-6 overflow-x-auto">
-                <QuickNav sections={quickNavSections} />
-              </div>
+              {/* Quick Navigation */}
+              <QuickNav sections={quickNavSections} />
 
               {/* Main Content */}
               <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6 mt-4 sm:mt-6">
