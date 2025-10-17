@@ -242,7 +242,7 @@ const MatchThread = () => {
             </header>
 
             {/* Also hide overflow here as a belt-and-suspenders */}
-            <main className="pb-12 overflow-x-auto">
+            <main className="pb-12 overflow-x-hidden">
               {/* Back Button */}
               <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
                 {/* Removed -ml-2 which pushed content outside the viewport on mobile */}
