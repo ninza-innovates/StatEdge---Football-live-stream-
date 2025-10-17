@@ -77,23 +77,19 @@ const MatchThread = () => {
   }, [slug]);
 
   useEffect(() => {
-    // Only show pricing modal if subscription check is complete AND user is not subscribed
-    // Add a small delay to avoid flashing during initial load
     const timer = setTimeout(() => {
       if (!subscriptionLoading && !isSubscribed) {
         setPricingModalOpen(true);
       }
     }, 500);
-
     return () => clearTimeout(timer);
   }, [isSubscribed, subscriptionLoading]);
 
   const fetchMatchData = async () => {
     try {
-      // Parse slug to get team names (e.g., "leeds-united-vs-sheffield-united")
-      const parts = slug?.split('-vs-');
+      const parts = slug?.split("-vs-");
       if (!parts || parts.length !== 2) {
-        console.error('Invalid match slug format');
+        console.error("Invalid match slug format");
         setLoading(false);
         return;
       }
@@ -101,23 +97,27 @@ const MatchThread = () => {
       const homeTeamSlug = parts[0];
       const awayTeamSlug = parts[1];
 
-      // Fetch all teams
-      const { data: teamsData, error: teamsError } = await supabase
-        .from('teams')
-        .select('*');
+      const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
 
       if (teamsError) throw teamsError;
 
-      // Find matching teams by slug matching
-      const homeTeamMatch = teamsData?.find(t => 
-        t.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') === homeTeamSlug
+      const homeTeamMatch = teamsData?.find(
+        (t) =>
+          t.name
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, "")
+            .replace(/\s+/g, "-") === homeTeamSlug,
       );
-      const awayTeamMatch = teamsData?.find(t => 
-        t.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') === awayTeamSlug
+      const awayTeamMatch = teamsData?.find(
+        (t) =>
+          t.name
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, "")
+            .replace(/\s+/g, "-") === awayTeamSlug,
       );
 
       if (!homeTeamMatch || !awayTeamMatch) {
-        console.error('Teams not found');
+        console.error("Teams not found");
         setLoading(false);
         return;
       }
@@ -125,48 +125,44 @@ const MatchThread = () => {
       setHomeTeam(homeTeamMatch);
       setAwayTeam(awayTeamMatch);
 
-      // Fetch fixture for these teams
       const { data: fixtureData, error: fixtureError } = await supabase
-        .from('fixtures')
-        .select('*')
-        .eq('home_team_id', homeTeamMatch.id)
-        .eq('away_team_id', awayTeamMatch.id)
-        .order('date', { ascending: false })
+        .from("fixtures")
+        .select("*")
+        .eq("home_team_id", homeTeamMatch.id)
+        .eq("away_team_id", awayTeamMatch.id)
+        .order("date", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (fixtureError) throw fixtureError;
 
       if (!fixtureData) {
-        console.error('Fixture not found');
+        console.error("Fixture not found");
         setLoading(false);
         return;
       }
 
       setFixture(fixtureData);
 
-      // Fetch league data
       const { data: leagueData, error: leagueError } = await supabase
-        .from('leagues')
-        .select('*')
-        .eq('id', fixtureData.league_id)
+        .from("leagues")
+        .select("*")
+        .eq("id", fixtureData.league_id)
         .maybeSingle();
 
       if (leagueError) throw leagueError;
       setLeague(leagueData);
 
-      // Fetch AI summary
       const { data: aiData, error: aiError } = await supabase
-        .from('ai_summaries')
-        .select('*')
-        .eq('fixture_id', fixtureData.id)
+        .from("ai_summaries")
+        .select("*")
+        .eq("fixture_id", fixtureData.id)
         .maybeSingle();
 
-      if (aiError && aiError.code !== 'PGRST116') throw aiError;
+      if (aiError && aiError.code !== "PGRST116") throw aiError;
       setAiSummary(aiData);
-
     } catch (error) {
-      console.error('Error fetching match data:', error);
+      console.error("Error fetching match data:", error);
     } finally {
       setLoading(false);
     }
@@ -175,13 +171,13 @@ const MatchThread = () => {
   if (loading || subscriptionLoading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
+        <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
           <div className="flex-1">
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
-            <main className="p-4 lg:p-6">
+            <main className="p-4 lg:p-6 overflow-x-hidden">
               <Skeleton className="h-8 w-48 mb-4" />
               <Skeleton className="h-64 w-full mb-4" />
               <Skeleton className="h-96 w-full" />
@@ -195,13 +191,13 @@ const MatchThread = () => {
   if (!fixture || !homeTeam || !awayTeam || !league) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
+        <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
           <div className="flex-1">
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
-            <main className="p-4 lg:p-6">
+            <main className="p-4 lg:p-6 overflow-x-hidden">
               <Button variant="ghost" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Go Back
@@ -237,54 +233,45 @@ const MatchThread = () => {
       </Helmet>
 
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
+        {/* KEY: prevent any child from creating a wider-than-viewport box */}
+        <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
           <div className="flex-1">
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
               <SidebarTrigger />
             </header>
 
-            <main className="pb-12">
+            {/* Also hide overflow here as a belt-and-suspenders */}
+            <main className="pb-12 overflow-x-hidden">
               {/* Back Button */}
               <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-0">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate(`/league/${league.slug}`)}
-                  className="mb-4 -ml-2"
-                  size="sm"
-                >
+                {/* Removed -ml-2 which pushed content outside the viewport on mobile */}
+                <Button variant="ghost" onClick={() => navigate(`/league/${league.slug}`)} className="mb-4" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Back to {league.name}</span>
                   <span className="sm:hidden">Back</span>
                 </Button>
               </div>
 
-              {/* Hero Section */}
-              <HeroSection 
-                league={league}
-                date={fixture.date}
-                venue={fixture.venue}
-                status={fixture.status}
-              />
-
-              {/* Quick Navigation */}
-              <QuickNav sections={quickNavSections} />
+              {/* Quick Navigation (allow its own horizontal scroll on tiny screens) */}
+              <div className="px-4 sm:px-6 overflow-x-auto">
+                <QuickNav sections={quickNavSections} />
+              </div>
 
               {/* Main Content */}
               <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+                {/* Hero Section */}
+                <HeroSection league={league} date={fixture.date} venue={fixture.venue} status={fixture.status} />
+
                 {/* Teams Comparison */}
                 <div id="teams">
-                  <TeamsComparison 
-                    homeTeam={homeTeam}
-                    awayTeam={awayTeam}
-                    keyStats={aiSummary?.key_stats}
-                  />
+                  <TeamsComparison homeTeam={homeTeam} awayTeam={awayTeam} keyStats={aiSummary?.key_stats} />
                 </div>
 
                 {/* AI Summary Card */}
                 {aiSummary && (
                   <div id="ai-summary">
-                    <AISummaryCard 
+                    <AISummaryCard
                       quickSummary={aiSummary.quick_summary}
                       advancedSummary={aiSummary.advanced_summary}
                       confidence={aiSummary.confidence}
@@ -317,7 +304,7 @@ const MatchThread = () => {
                 {/* Lineups & Injuries */}
                 {aiSummary?.lineups_injuries && (
                   <div id="lineups">
-                    <LineupsSection 
+                    <LineupsSection
                       lineupsData={aiSummary.lineups_injuries}
                       homeTeam={homeTeam.name}
                       awayTeam={awayTeam.name}
@@ -346,10 +333,7 @@ const MatchThread = () => {
         </div>
       </SidebarProvider>
 
-      <PricingModal 
-        open={pricingModalOpen} 
-        onOpenChange={setPricingModalOpen}
-      />
+      <PricingModal open={pricingModalOpen} onOpenChange={setPricingModalOpen} />
     </>
   );
 };
