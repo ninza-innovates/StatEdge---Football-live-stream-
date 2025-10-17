@@ -254,7 +254,7 @@ const MatchThread = () => {
               </div>
 
               {/* Quick Navigation (allow its own horizontal scroll on tiny screens) */}
-              <div className="px-4 sm:px-6 overflow-x-auto">
+              <div className="px-4 sm:px-6">
                 <QuickNav sections={quickNavSections} />
               </div>
 
