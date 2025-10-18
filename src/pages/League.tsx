@@ -447,7 +447,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                 </div>
               </div>
 
-              <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-center">
+              <div className="grid grid-cols-[1fr_auto_1fr] sm:gap-6 gap-2 items-center">
                 {/* Home Team */}
                 <div className="flex items-center sm:gap-2 lg:gap-4 gap-1 justify-end">
                   <div className="text-right">
