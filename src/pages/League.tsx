@@ -449,7 +449,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
               <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-center">
                 {/* Home Team */}
-                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1 lg:justify-end justify-center">
+                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1 lg:justify-end justif-center">
                   <div className="text-right">
                     <h3 className="lg:text-lg text-sm sm:text-base font-bold">{homeTeam?.name || "Unknown"}</h3>
                   </div>
@@ -651,16 +651,11 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
   useEffect(() => {
     const fetchTableData = async () => {
       try {
-        // Fetch teams
         const { data: teamsData } = await supabase.from("teams").select("*");
+        const map = new Map<number, Team>();
+        teamsData?.forEach((t) => map.set(t.id, t));
+        setTeams(map);
 
-        const teamsMap = new Map<number, Team>();
-        teamsData?.forEach((team) => {
-          teamsMap.set(team.id, team);
-        });
-        setTeams(teamsMap);
-
-        // Fetch standings from database (populated by sync function)
         const { data: standingsData, error } = await supabase
           .from("standings")
           .select("*")
@@ -668,103 +663,158 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
           .order("rank", { ascending: true });
 
         if (error) throw error;
-
         setStandings(standingsData || []);
-      } catch (error) {
-        console.error("Error fetching table data:", error);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
     };
-
     fetchTableData();
   }, [leagueId]);
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        {[...Array(10)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+      <div className="space-y-3">
+        {[...Array(8)].map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border/50 text-sm text-muted-foreground">
-              <th className="text-left py-3 px-2 font-semibold">#</th>
-              <th className="text-left py-3 px-2 font-semibold">Team</th>
-              <th className="text-center py-3 px-2 font-semibold">P</th>
-              <th className="text-center py-3 px-2 font-semibold">W</th>
-              <th className="text-center py-3 px-2 font-semibold">D</th>
-              <th className="text-center py-3 px-2 font-semibold">L</th>
-              <th className="text-center py-3 px-2 font-semibold">GF</th>
-              <th className="text-center py-3 px-2 font-semibold">GA</th>
-              <th className="text-center py-3 px-2 font-semibold">GD</th>
-              <th className="text-center py-3 px-2 font-semibold">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {standings.map((standing, index) => {
-              const team = teams.get(standing.team_id);
-              return (
-                <tr
-                  key={standing.team_id}
-                  className={`border-b border-border/30 hover:bg-accent/50 transition-colors ${
-                    index < 4
-                      ? "bg-emerald-500/5"
-                      : index < 6
-                        ? "bg-blue-500/5"
-                        : index >= standings.length - 3
-                          ? "bg-red-500/5"
-                          : ""
-                  }`}
+    <div className="space-y-4 max-w-full overflow-x-hidden">
+      {/* Mobile cards (no page overflow) */}
+      <div className="md:hidden grid grid-cols-1 gap-3 max-w-full">
+        {standings.map((s, index) => {
+          const team = teams.get(s.team_id);
+          const top4 = index < 4;
+          const europa = index >= 4 && index < 6;
+          const relegation = index >= standings.length - 3;
+
+          return (
+            <div
+              key={s.team_id}
+              className={`flex items-center justify-between gap-3 rounded-xl border p-3 bg-card/60 max-w-full`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`h-7 w-7 shrink-0 rounded text-xs font-bold grid place-items-center
+                    ${top4 ? "bg-primary/20 text-primary" : relegation ? "bg-red-500/15 text-red-500" : "bg-muted text-muted-foreground"}`}
                 >
-                  <td className="py-3 px-2 text-sm font-medium">{standing.rank}</td>
-                  <td className="py-3 px-2">
-                    <div className="flex items-center gap-2">
-                      {team?.logo && (
-                        <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
-                          <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
-                        </div>
-                      )}
-                      <span className="text-sm font-medium">{team?.name || "Unknown"}</span>
-                    </div>
-                  </td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.played}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.win}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.draw}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.lose}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.goals_for}</td>
-                  <td className="text-center py-3 px-2 text-sm">{standing.goals_against}</td>
-                  <td className="text-center py-3 px-2 text-sm font-medium">
-                    {standing.goal_diff > 0 ? "+" : ""}
-                    {standing.goal_diff}
-                  </td>
-                  <td className="text-center py-3 px-2 text-sm font-bold">{standing.points}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  {s.rank}
+                </div>
+
+                {team?.logo && (
+                  <div className="h-7 w-7 shrink-0 rounded bg-background/50 p-0.5 grid place-items-center">
+                    <img src={team.logo} alt={team.name} className="h-full w-full object-contain max-w-full" />
+                  </div>
+                )}
+
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{team?.name || "Unknown"}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    P{s.played} • W{s.win} D{s.draw} L{s.lose} • GD {s.goal_diff > 0 ? `+${s.goal_diff}` : s.goal_diff}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right shrink-0">
+                <div className="text-base font-semibold">{s.points}</div>
+                <div className="text-[11px] text-muted-foreground">Pts</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-emerald-500/20 border border-emerald-500/40"></div>
-          <span className="text-muted-foreground">Champions League</span>
+      {/* Desktop table in its own scroller (prevents page scroll) */}
+      <div className="hidden md:block">
+        <div className="overflow-x-auto rounded-xl border no-scrollbar w-full max-w-full">
+          <table className="w-full min-w-[720px] table-fixed text-sm">
+            <colgroup>
+              <col className="w-[48px]" />
+              <col />
+              <col className="w-[56px]" />
+              <col className="w-[56px]" />
+              <col className="w-[56px]" />
+              <col className="w-[56px]" />
+              <col className="w-[56px]" />
+              <col className="w-[56px]" />
+              <col className="w-[56px]" />
+              <col className="w-[64px]" />
+            </colgroup>
+            <thead>
+              <tr className="border-b bg-muted/30 text-muted-foreground">
+                <th className="text-left py-3 px-3 font-semibold">#</th>
+                <th className="text-left py-3 px-3 font-semibold">Team</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">P</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">W</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">D</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">L</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">GF</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">GA</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">GD</th>
+                <th className="text-center py-3 px-3 font-semibold whitespace-nowrap">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((s, index) => {
+                const team = teams.get(s.team_id);
+                const tint =
+                  index < 4
+                    ? "bg-emerald-500/5"
+                    : index < 6
+                      ? "bg-blue-500/5"
+                      : index >= standings.length - 3
+                        ? "bg-red-500/5"
+                        : "";
+
+                return (
+                  <tr key={s.team_id} className={`border-b hover:bg-accent/50 transition-colors ${tint}`}>
+                    <td className="py-3 px-3 font-medium">{s.rank}</td>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {team?.logo && (
+                          <div className="h-6 w-6 rounded bg-background/50 p-0.5 grid place-items-center shrink-0">
+                            <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
+                          </div>
+                        )}
+                        <span className="font-medium truncate">{team?.name || "Unknown"}</span>
+                      </div>
+                    </td>
+                    <td className="text-center py-3 px-3 whitespace-nowrap">{s.played}</td>
+                    <td className="text-center py-3 px-3 whitespace-nowrap">{s.win}</td>
+                    <td className="text-center py-3 px-3 whitespace-nowrap">{s.draw}</td>
+                    <td className="text-center py-3 px-3 whitespace-nowrap">{s.lose}</td>
+                    <td className="text-center py-3 px-3 whitespace-nowrap">{s.goals_for}</td>
+                    <td className="text-center py-3 px-3 whitespace-nowrap">{s.goals_against}</td>
+                    <td className="text-center py-3 px-3 whitespace-nowrap">
+                      {s.goal_diff > 0 ? "+" : ""}
+                      {s.goal_diff}
+                    </td>
+                    <td className="text-center py-3 px-3 font-bold whitespace-nowrap">{s.points}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-blue-500/20 border border-blue-500/40"></div>
-          <span className="text-muted-foreground">Europa League</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded bg-red-500/20 border border-red-500/40"></div>
-          <span className="text-muted-foreground">Relegation</span>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded bg-emerald-500/20 border border-emerald-500/40" />
+            <span className="text-muted-foreground">Champions League</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded bg-blue-500/20 border border-blue-500/40" />
+            <span className="text-muted-foreground">Europa League</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded bg-red-500/20 border border-red-500/40" />
+            <span className="text-muted-foreground">Relegation</span>
+          </div>
         </div>
       </div>
     </div>
@@ -779,146 +829,100 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 
   useEffect(() => {
     fetchRealData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId]);
 
   const fetchRealData = async () => {
     try {
-      // Fetch fixtures for this league
       const { data: fixturesData, error: fixturesError } = await supabase
         .from("fixtures")
         .select("*, goals")
         .eq("league_id", leagueId)
         .order("date", { ascending: false })
-        .limit(100);
-
+        .limit(120);
       if (fixturesError) throw fixturesError;
 
-      // Fetch all teams
       const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
-
       if (teamsError) throw teamsError;
 
-      // Create a map of teams for quick lookup
-      const teamsMap = new Map<number, Team>();
-      teamsData?.forEach((team) => {
-        teamsMap.set(team.id, team);
-      });
-
-      setTeams(teamsMap);
+      const map = new Map<number, Team>();
+      teamsData?.forEach((t) => map.set(t.id, t));
+      setTeams(map);
       setFixtures(fixturesData || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  // Calculate team stats from fixtures
   const calculateTeamStats = () => {
     const teamStats = new Map<number, any>();
+    fixtures.forEach((fx) => {
+      if (!fx.goals) return;
+      const h = fx.home_team_id,
+        a = fx.away_team_id,
+        hg = fx.goals.home,
+        ag = fx.goals.away;
 
-    fixtures.forEach((fixture) => {
-      if (!fixture.goals) return;
+      if (!teamStats.has(h))
+        teamStats.set(h, { id: h, matches: [], wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 });
+      if (!teamStats.has(a))
+        teamStats.set(a, { id: a, matches: [], wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 });
 
-      const homeTeamId = fixture.home_team_id;
-      const awayTeamId = fixture.away_team_id;
-      const homeGoals = fixture.goals.home;
-      const awayGoals = fixture.goals.away;
+      const hs = teamStats.get(h),
+        as = teamStats.get(a);
+      hs.goalsFor += hg;
+      hs.goalsAgainst += ag;
+      as.goalsFor += ag;
+      as.goalsAgainst += hg;
 
-      // Initialize stats if needed
-      if (!teamStats.has(homeTeamId)) {
-        teamStats.set(homeTeamId, {
-          id: homeTeamId,
-          matches: [],
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          points: 0,
-        });
-      }
-      if (!teamStats.has(awayTeamId)) {
-        teamStats.set(awayTeamId, {
-          id: awayTeamId,
-          matches: [],
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          points: 0,
-        });
-      }
-
-      const homeStats = teamStats.get(homeTeamId);
-      const awayStats = teamStats.get(awayTeamId);
-
-      // Update goals
-      homeStats.goalsFor += homeGoals;
-      homeStats.goalsAgainst += awayGoals;
-      awayStats.goalsFor += awayGoals;
-      awayStats.goalsAgainst += homeGoals;
-
-      // Update results
-      if (homeGoals > awayGoals) {
-        homeStats.wins++;
-        homeStats.points += 3;
-        awayStats.losses++;
-      } else if (homeGoals < awayGoals) {
-        awayStats.wins++;
-        awayStats.points += 3;
-        homeStats.losses++;
+      if (hg > ag) {
+        hs.wins++;
+        hs.points += 3;
+        as.losses++;
+      } else if (hg < ag) {
+        as.wins++;
+        as.points += 3;
+        hs.losses++;
       } else {
-        homeStats.draws++;
-        awayStats.draws++;
-        homeStats.points += 1;
-        awayStats.points += 1;
+        hs.draws++;
+        as.draws++;
+        hs.points++;
+        as.points++;
       }
 
-      // Add match to history (limit to last 5)
-      homeStats.matches.unshift({
-        date: fixture.date,
-        opponent: teams.get(awayTeamId)?.name || "Unknown",
+      hs.matches.unshift({
+        date: fx.date,
+        opponent: teams.get(a)?.name || "Unknown",
         home: true,
-        score: `${homeGoals}-${awayGoals}`,
-        result: homeGoals > awayGoals ? "W" : homeGoals < awayGoals ? "L" : "D",
+        score: `${hg}-${ag}`,
+        result: hg > ag ? "W" : hg < ag ? "L" : "D",
       });
-
-      awayStats.matches.unshift({
-        date: fixture.date,
-        opponent: teams.get(homeTeamId)?.name || "Unknown",
+      as.matches.unshift({
+        date: fx.date,
+        opponent: teams.get(h)?.name || "Unknown",
         home: false,
-        score: `${awayGoals}-${homeGoals}`,
-        result: awayGoals > homeGoals ? "W" : awayGoals < homeGoals ? "L" : "D",
+        score: `${ag}-${hg}`,
+        result: ag > hg ? "W" : ag < hg ? "L" : "D",
       });
     });
 
-    // Convert to array and sort by points
-    const statsArray = Array.from(teamStats.values())
-      .map((stat) => ({
-        ...stat,
-        matches: stat.matches.slice(0, 5),
-        goalDiff: stat.goalsFor - stat.goalsAgainst,
-        form: stat.matches.slice(0, 5).map((m: any) => m.result),
+    return Array.from(teamStats.values())
+      .map((s) => ({
+        ...s,
+        matches: s.matches.slice(0, 5),
+        goalDiff: s.goalsFor - s.goalsAgainst,
+        form: s.matches.slice(0, 5).map((m: any) => m.result),
       }))
-      .sort((a, b) => {
-        if (b.points !== a.points) return b.points - a.points;
-        if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
-        return b.goalsFor - a.goalsFor;
-      })
-      .slice(0, 10); // Top 10 teams
-
-    return statsArray;
+      .sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor)
+      .slice(0, 10);
   };
 
-  if (loading) {
-    return <Skeleton className="h-96 w-full" />;
-  }
+  if (loading) return <Skeleton className="h-96 w-full" />;
 
   const topTeams = calculateTeamStats();
-
-  if (topTeams.length === 0) {
+  if (!topTeams.length) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">No fixture data available for this league yet.</p>
@@ -927,152 +931,152 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Team Form Analysis - Left side (2/3) */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-full overflow-x-hidden">
+      {/* Left: Team Form */}
       <div className="lg:col-span-2 space-y-4">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="h-8 w-1 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
-          <h2 className="text-2xl font-bold">Team Form Analysis</h2>
+        <div className="flex items-center gap-2 mb-2 sm:mb-4">
+          <div className="h-6 w-1 sm:h-8 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+          <h2 className="text-xl sm:text-2xl font-bold">Team Form Analysis</h2>
         </div>
 
         {topTeams.slice(0, 5).map((team, idx) => {
-          const teamData = teams.get(team.id);
+          const t = teams.get(team.id);
           return (
             <div
               key={team.id}
-              className="group border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
+              className="group border rounded-xl p-3 sm:p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
             >
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-xl font-bold">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3 sm:gap-6 mb-4 sm:mb-6">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className="grid place-items-center w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-sm sm:text-xl font-bold shrink-0">
                     {idx + 1}
                   </div>
-                  {teamData?.logo && (
-                    <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center">
-                      <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
+                  {t?.logo && (
+                    <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl bg-background/50 p-1.5 sm:p-2 grid place-items-center shrink-0">
+                      <img src={t.logo} alt={t.name} className="h-full w-full object-contain max-w-full" />
                     </div>
                   )}
-                  <div>
-                    <h3 className="text-lg font-bold">{teamData?.name || "Unknown Team"}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      {team.form.map((result: string, formIdx: number) => (
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-bold truncate">{t?.name || "Unknown Team"}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+                      {team.form.map((r: string, i: number) => (
                         <div
-                          key={formIdx}
-                          className={`h-5 w-5 rounded text-[10px] font-bold flex items-center justify-center ${
-                            result === "W"
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : result === "D"
-                                ? "bg-amber-500/20 text-amber-400"
-                                : "bg-red-500/20 text-red-400"
-                          }`}
+                          key={i}
+                          className={`h-5 w-5 sm:h-6 sm:w-6 rounded text-[10px] sm:text-[11px] font-bold grid place-items-center
+                            ${
+                              r === "W"
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : r === "D"
+                                  ? "bg-amber-500/20 text-amber-400"
+                                  : "bg-red-500/20 text-red-400"
+                            }`}
                         >
-                          {result}
+                          {r}
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-6 text-right">
+
+                <div className="flex gap-4 sm:gap-6 text-right shrink-0">
                   <div>
-                    <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
+                    <div className="text-lg sm:text-2xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
                       {team.points}
                     </div>
-                    <div className="text-xs text-muted-foreground font-medium">Points</div>
+                    <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">Points</div>
                   </div>
                   <div>
-                    <div className="text-lg font-semibold">
+                    <div className="text-sm sm:text-lg font-semibold">
                       {team.goalsFor}:{team.goalsAgainst}
                     </div>
-                    <div className="text-xs text-muted-foreground">GF:GA</div>
+                    <div className="text-[11px] sm:text-xs text-muted-foreground">GF:GA</div>
                   </div>
                   <div>
                     <div
-                      className={`text-lg font-semibold ${team.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                      className={`text-sm sm:text-lg font-semibold ${team.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}
                     >
                       {team.goalDiff >= 0 ? "+" : ""}
                       {team.goalDiff}
                     </div>
-                    <div className="text-xs text-muted-foreground">GD</div>
+                    <div className="text-[11px] sm:text-xs text-muted-foreground">GD</div>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-5 gap-3">
-                {team.matches.map((match: any, matchIdx: number) => {
-                  const isWin = match.result === "W";
-                  const isDraw = match.result === "D";
-                  return (
-                    <div
-                      key={matchIdx}
-                      className={`relative overflow-hidden rounded-lg p-3 border transition-all ${
-                        isWin
-                          ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
-                          : isDraw
-                            ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
-                            : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
-                      }`}
-                    >
-                      <div className="text-[10px] text-muted-foreground mb-1 font-medium">
-                        {new Date(match.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              {/* Last 5 matches — internal scroll only */}
+              <div className="overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+                <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
+                  {team.matches.map((m: any, i: number) => {
+                    const win = m.result === "W";
+                    const draw = m.result === "D";
+                    return (
+                      <div
+                        key={i}
+                        className={`relative shrink-0 w-[46%] xs:w-[42%] sm:w-auto snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
+                          ${
+                            win
+                              ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
+                              : draw
+                                ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                                : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
+                          }`}
+                      >
+                        <div className="text-[10px] text-muted-foreground mb-1 font-medium">
+                          {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </div>
+                        <div className="text-[11px] sm:text-xs mb-1.5 sm:mb-2 line-clamp-2 h-7 sm:h-8">
+                          <span className="text-muted-foreground">{m.home ? "vs" : "@"}</span> {m.opponent}
+                        </div>
+                        <div className="text-sm sm:text-base font-bold">{m.score}</div>
                       </div>
-                      <div className="text-xs mb-2 line-clamp-2 h-8">
-                        <span className="text-muted-foreground">{match.home ? "vs" : "@"}</span> {match.opponent}
-                      </div>
-                      <div className="text-sm font-bold">{match.score}</div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* League Table - Right side (1/3) */}
-      <div className="space-y-6">
-        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50  top-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Trophy className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold">League Table</h2>
+      {/* Right: mini table (full width on mobile) */}
+      <div className="space-y-4">
+        <div className="border rounded-xl p-4 sm:p-6 bg-gradient-to-br from-card to-card/50 lg:sticky lg:top-6">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+            <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <h2 className="text-base sm:text-lg font-bold">League Table</h2>
           </div>
 
           <div className="space-y-1">
-            {topTeams.slice(0, 10).map((team, idx) => {
-              const teamData = teams.get(team.id);
-              const isTopFour = idx < 4;
-              const isRelegation = idx >= topTeams.length - 3;
+            {topTeams.slice(0, 10).map((t, idx) => {
+              const td = teams.get(t.id);
+              const top4 = idx < 4;
+              const rel = idx >= topTeams.length - 3;
 
               return (
                 <div
-                  key={team.id}
-                  className={`flex items-center gap-3 py-3 px-3 rounded-lg transition-all hover:bg-accent/50 ${
-                    isTopFour ? "bg-primary/5" : ""
-                  }`}
+                  key={t.id}
+                  className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all hover:bg-accent/50`}
                 >
                   <div
-                    className={`flex items-center justify-center h-6 w-6 rounded text-xs font-bold ${
-                      isTopFour
-                        ? "bg-primary/20 text-primary"
-                        : isRelegation
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-muted text-muted-foreground"
-                    }`}
+                    className={`h-6 w-6 rounded text-[11px] font-bold grid place-items-center
+                      ${top4 ? "bg-primary/20 text-primary" : rel ? "bg-red-500/20 text-red-400" : "bg-muted text-muted-foreground"}`}
                   >
                     {idx + 1}
                   </div>
-                  {teamData?.logo && (
-                    <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center">
-                      <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
+                  {td?.logo && (
+                    <div className="h-6 w-6 rounded bg-background/50 p-0.5 grid place-items-center shrink-0">
+                      <img src={td.logo} alt={td.name} className="h-full w-full object-contain" />
                     </div>
                   )}
-                  <span className="flex-1 text-sm font-medium truncate">{teamData?.name || "Unknown"}</span>
-                  <span className="text-sm font-bold">{team.points}</span>
+                  <span className="flex-1 text-sm font-medium truncate min-w-0">{td?.name || "Unknown"}</span>
+                  <span className="text-sm font-bold shrink-0">{t.points}</span>
                 </div>
               );
             })}
           </div>
 
-          <Button variant="link" className="w-full mt-4 text-primary group">
+          <Button variant="link" className="w-full mt-3 sm:mt-4 text-primary group">
             View Full Table
             <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
           </Button>
