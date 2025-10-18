@@ -49,11 +49,7 @@ const League = () => {
 
   const fetchLeague = async () => {
     try {
-      const { data, error } = await supabase
-        .from("leagues")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
+      const { data, error } = await supabase.from("leagues").select("*").eq("slug", slug).maybeSingle();
 
       if (error) throw error;
       setLeague(data);
@@ -118,127 +114,139 @@ const League = () => {
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />
-        <div className="flex-1">
-          <header className="h-14 border-b flex items-center px-4 bg-card/50">
-            <SidebarTrigger />
-          </header>
-          
-          <main className="p-6">
-            {/* League Header */}
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-1">{league.name}</h1>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(league.startDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })} – {new Date(league.endDate).toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-                </p>
-              </div>
-              <AdminSyncButton />
-            </div>
+          <div className="flex-1">
+            <header className="h-14 border-b flex items-center px-4 bg-card/50">
+              <SidebarTrigger />
+            </header>
 
-            {/* Matchthread Notice Banner */}
-            <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-full bg-primary/20 flex-shrink-0">
-                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-sm mb-1">Live Matchthreads</h3>
+            <main className="p-6">
+              {/* League Header */}
+              <div className="mb-6 flex items-start justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold mb-1">{league.name}</h1>
                   <p className="text-sm text-muted-foreground">
-                    Matchthreads go live 24 hours before kick-off with the most up-to-date data, analysis, and AI insights.
+                    {new Date(league.startDate).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}{" "}
+                    –{" "}
+                    {new Date(league.endDate).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="flex items-center gap-3 mb-6 flex-wrap">
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select date range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="next-2-days">Next 2 Days</SelectItem>
-                  <SelectItem value="next-7-days">Next 7 Days</SelectItem>
-                  <SelectItem value="next-30-days">Next 30 Days</SelectItem>
-                  <SelectItem value="all">All Fixtures</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center border rounded-md">
-                <Button
-                  variant={viewMode === "list" ? "secondary" : "ghost"}
-                  size="icon"
-                  className="rounded-r-none"
-                  onClick={() => setViewMode("list")}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "grid" ? "secondary" : "ghost"}
-                  size="icon"
-                  className="rounded-l-none"
-                  onClick={() => setViewMode("grid")}
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
+                <AdminSyncButton />
               </div>
 
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Kick-off" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Times</SelectItem>
-                  <SelectItem value="morning">Morning</SelectItem>
-                  <SelectItem value="afternoon">Afternoon</SelectItem>
-                  <SelectItem value="evening">Evening</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="relative flex-1 max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search teams..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+              {/* Matchthread Notice Banner */}
+              <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-full bg-primary/20 flex-shrink-0">
+                    <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm mb-1">Live Matchthreads</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Matchthreads go live 24 hours before kick-off with the most up-to-date data, analysis, and AI
+                      insights.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Tabs */}
-            <div className="border-b mb-6">
-              <div className="flex gap-6">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`pb-3 px-1 font-medium transition-colors relative ${
-                      activeTab === tab.id
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
+              {/* Filters */}
+              <div className="flex items-center gap-3 mb-6 flex-wrap">
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select date range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="next-2-days">Next 2 Days</SelectItem>
+                    <SelectItem value="next-7-days">Next 7 Days</SelectItem>
+                    <SelectItem value="next-30-days">Next 30 Days</SelectItem>
+                    <SelectItem value="all">All Fixtures</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex items-center border rounded-md">
+                  <Button
+                    variant={viewMode === "list" ? "secondary" : "ghost"}
+                    size="icon"
+                    className="rounded-r-none"
+                    onClick={() => setViewMode("list")}
                   >
-                    {tab.label}
-                    {activeTab === tab.id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    size="icon"
+                    className="rounded-l-none"
+                    onClick={() => setViewMode("grid")}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                </div>
 
-            {/* Tab Content */}
-            {activeTab === "fixtures" && <FixturesTab leagueId={league.id} setActiveTab={setActiveTab} />}
-            {activeTab === "table" && <TableTab leagueId={league.id} />}
-            {activeTab === "form" && <FormTab leagueId={league.id} />}
-            {activeTab === "scorers" && <ScorersTab leagueId={league.id} />}
-          </main>
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Kick-off" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Times</SelectItem>
+                    <SelectItem value="morning">Morning</SelectItem>
+                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                    <SelectItem value="evening">Evening</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search teams..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="border-b mb-6">
+                <div className="flex gap-6">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`pb-3 px-1 font-medium transition-colors relative ${
+                        activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {tab.label}
+                      {activeTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === "fixtures" && <FixturesTab leagueId={league.id} setActiveTab={setActiveTab} />}
+              {activeTab === "table" && <TableTab leagueId={league.id} />}
+              {activeTab === "form" && <FormTab leagueId={league.id} />}
+              {activeTab === "scorers" && <ScorersTab leagueId={league.id} />}
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
     </>
   );
 };
@@ -280,15 +288,13 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
       console.log("FixturesData", fixturesData);
 
       // Fetch all teams
-      const { data: teamsData, error: teamsError } = await supabase
-        .from("teams")
-        .select("*");
+      const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
 
       if (teamsError) throw teamsError;
 
       // Create a map of teams for quick lookup
       const teamsMap = new Map<number, Team>();
-      teamsData?.forEach(team => {
+      teamsData?.forEach((team) => {
         teamsMap.set(team.id, team);
       });
 
@@ -322,17 +328,14 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('user_favorites')
-        .select('fixture_id')
-        .eq('user_id', user.id);
+      const { data, error } = await supabase.from("user_favorites").select("fixture_id").eq("user_id", user.id);
 
       if (error) throw error;
 
-      const favoriteIds = new Set(data?.map(f => f.fixture_id) || []);
+      const favoriteIds = new Set(data?.map((f) => f.fixture_id) || []);
       setFavorites(favoriteIds);
     } catch (error) {
-      console.error('Error fetching favorites:', error);
+      console.error("Error fetching favorites:", error);
     }
   };
 
@@ -352,14 +355,14 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
       if (isFavorited) {
         // Remove from favorites
         const { error } = await supabase
-          .from('user_favorites')
+          .from("user_favorites")
           .delete()
-          .eq('user_id', user.id)
-          .eq('fixture_id', fixtureId);
+          .eq("user_id", user.id)
+          .eq("fixture_id", fixtureId);
 
         if (error) throw error;
 
-        setFavorites(prev => {
+        setFavorites((prev) => {
           const newFavorites = new Set(prev);
           newFavorites.delete(fixtureId);
           return newFavorites;
@@ -371,16 +374,14 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
         });
       } else {
         // Add to favorites
-        const { error } = await supabase
-          .from('user_favorites')
-          .insert({
-            user_id: user.id,
-            fixture_id: fixtureId,
-          });
+        const { error } = await supabase.from("user_favorites").insert({
+          user_id: user.id,
+          fixture_id: fixtureId,
+        });
 
         if (error) throw error;
 
-        setFavorites(prev => new Set(prev).add(fixtureId));
+        setFavorites((prev) => new Set(prev).add(fixtureId));
 
         toast({
           title: "Added to favorites",
@@ -388,7 +389,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
         });
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error("Error toggling favorite:", error);
       toast({
         title: "Error",
         description: "Failed to update favorites",
@@ -431,17 +432,17 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm text-muted-foreground font-medium">
-                  {fixtureDate.toLocaleDateString('en-US', { 
-                    weekday: 'long',
-                    month: 'long', 
-                    day: 'numeric',
-                    year: 'numeric'
+                  {fixtureDate.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
                   })}
                 </div>
                 <div className="text-sm font-medium">
-                  {fixtureDate.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit'
+                  {fixtureDate.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </div>
               </div>
@@ -454,18 +455,14 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                   </div>
                   {homeTeam?.logo && (
                     <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-background/50 p-1 sm:p-2 flex items-center justify-center flex-shrink-0">
-                      <img
-                        src={homeTeam.logo}
-                        alt={homeTeam.name}
-                        className="h-full w-full object-contain"
-                      />
+                      <img src={homeTeam.logo} alt={homeTeam.name} className="h-full w-full object-contain" />
                     </div>
                   )}
                 </div>
 
                 {/* Score or VS */}
                 <div className="flex items-center justify-center lg:min-w-[80px] min-w-[20px] sm:min-w-[40px]">
-                  {fixture.status === 'FT' && hasScore ? (
+                  {fixture.status === "FT" && hasScore ? (
                     <div className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
                       {fixture.goals.home} - {fixture.goals.away}
                     </div>
@@ -478,11 +475,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                 <div className="flex items-center sm:gap-2 lg:gap-4 gap-1">
                   {awayTeam?.logo && (
                     <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-background/50 p-1 sm:p-2 flex items-center justify-center flex-shrink-0">
-                      <img
-                        src={awayTeam.logo}
-                        alt={awayTeam.name}
-                        className="h-full w-full object-contain"
-                      />
+                      <img src={awayTeam.logo} alt={awayTeam.name} className="h-full w-full object-contain" />
                     </div>
                   )}
                   <div>
@@ -505,17 +498,15 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                     onClick={() => toggleFavorite(fixture.id)}
                     className={`transition-all ${
                       favorites.has(fixture.id)
-                        ? 'text-red-500 hover:text-red-600'
-                        : 'text-muted-foreground hover:text-red-500'
+                        ? "text-red-500 hover:text-red-600"
+                        : "text-muted-foreground hover:text-red-500"
                     }`}
                   >
-                    <Heart
-                      className={`h-5 w-5 ${favorites.has(fixture.id) ? 'fill-current' : ''}`}
-                    />
+                    <Heart className={`h-5 w-5 ${favorites.has(fixture.id) ? "fill-current" : ""}`} />
                   </Button>
                   {isSubscribed ? (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="group bg-gradient-to-r from-primary to-primary-glow hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 font-semibold text-xs sm:text-sm"
                       onClick={() => {
                         if (homeTeam && awayTeam) {
@@ -526,11 +517,13 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                     >
                       <span className="hidden sm:inline">View Matchthread</span>
                       <span className="sm:hidden">Matchthread</span>
-                      <span className="ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
+                      <span className="ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform duration-300">
+                        →
+                      </span>
                     </Button>
                   ) : (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       className="group font-semibold text-xs sm:text-sm"
                       onClick={() => setPricingModalOpen(true)}
@@ -553,7 +546,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
       {/* Sidebar - Right side (1/3) */}
       <div className="space-y-6">
         {/* League Table */}
-        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 sticky top-6">
+        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50  top-6">
           <div className="flex items-center gap-2 mb-6">
             <Trophy className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold">League Table</h2>
@@ -563,7 +556,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
             {standings.slice(0, 6).map((standing, idx) => {
               const teamData = teams.get(standing.team_id);
               const isTopFour = idx < 4;
-              
+
               return (
                 <div
                   key={standing.team_id}
@@ -573,36 +566,24 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                 >
                   <div
                     className={`flex items-center justify-center h-6 w-6 rounded text-xs font-bold ${
-                      isTopFour
-                        ? "bg-primary/20 text-primary"
-                        : "bg-muted text-muted-foreground"
+                      isTopFour ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {standing.rank}
                   </div>
                   {teamData?.logo && (
                     <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center">
-                      <img
-                        src={teamData.logo}
-                        alt={teamData.name}
-                        className="h-full w-full object-contain"
-                      />
+                      <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
                     </div>
                   )}
-                  <span className="flex-1 text-sm font-medium truncate">
-                    {teamData?.name || "Unknown"}
-                  </span>
+                  <span className="flex-1 text-sm font-medium truncate">{teamData?.name || "Unknown"}</span>
                   <span className="text-sm font-bold">{standing.points}</span>
                 </div>
               );
             })}
           </div>
 
-          <Button 
-            variant="link" 
-            className="w-full mt-4 text-primary group"
-            onClick={() => setActiveTab("table")}
-          >
+          <Button variant="link" className="w-full mt-4 text-primary group" onClick={() => setActiveTab("table")}>
             View Full League Table
             <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
           </Button>
@@ -618,18 +599,14 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
           <div className="space-y-3">
             {standings.slice(0, 5).map((standing) => {
               const teamData = teams.get(standing.team_id);
-              const formLetters = standing.form ? standing.form.split('').slice(0, 5) : [];
-              
+              const formLetters = standing.form ? standing.form.split("").slice(0, 5) : [];
+
               return (
                 <div key={standing.team_id} className="space-y-2">
                   <div className="flex items-center gap-2">
                     {teamData?.logo && (
                       <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
-                        <img
-                          src={teamData.logo}
-                          alt={teamData.name}
-                          className="h-full w-full object-contain"
-                        />
+                        <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
                       </div>
                     )}
                     <div className="text-xs font-semibold truncate">{teamData?.name || "Unknown"}</div>
@@ -642,8 +619,8 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                           result === "W"
                             ? "bg-emerald-500/20 text-emerald-400"
                             : result === "D"
-                            ? "bg-amber-500/20 text-amber-400"
-                            : "bg-red-500/20 text-red-400"
+                              ? "bg-amber-500/20 text-amber-400"
+                              : "bg-red-500/20 text-red-400"
                         }`}
                       >
                         <div className="text-[9px] font-bold">{result}</div>
@@ -655,11 +632,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
             })}
           </div>
 
-          <Button 
-            variant="link" 
-            className="w-full mt-4 text-primary group"
-            onClick={() => setActiveTab("form")}
-          >
+          <Button variant="link" className="w-full mt-4 text-primary group" onClick={() => setActiveTab("form")}>
             View Full League Form
             <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
           </Button>
@@ -679,9 +652,7 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
     const fetchTableData = async () => {
       try {
         // Fetch teams
-        const { data: teamsData } = await supabase
-          .from("teams")
-          .select("*");
+        const { data: teamsData } = await supabase.from("teams").select("*");
 
         const teamsMap = new Map<number, Team>();
         teamsData?.forEach((team) => {
@@ -747,10 +718,10 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
                     index < 4
                       ? "bg-emerald-500/5"
                       : index < 6
-                      ? "bg-blue-500/5"
-                      : index >= standings.length - 3
-                      ? "bg-red-500/5"
-                      : ""
+                        ? "bg-blue-500/5"
+                        : index >= standings.length - 3
+                          ? "bg-red-500/5"
+                          : ""
                   }`}
                 >
                   <td className="py-3 px-2 text-sm font-medium">{standing.rank}</td>
@@ -758,11 +729,7 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
                     <div className="flex items-center gap-2">
                       {team?.logo && (
                         <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
-                          <img
-                            src={team.logo}
-                            alt={team.name}
-                            className="h-full w-full object-contain"
-                          />
+                          <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
                         </div>
                       )}
                       <span className="text-sm font-medium">{team?.name || "Unknown"}</span>
@@ -827,15 +794,13 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
       if (fixturesError) throw fixturesError;
 
       // Fetch all teams
-      const { data: teamsData, error: teamsError } = await supabase
-        .from("teams")
-        .select("*");
+      const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
 
       if (teamsError) throw teamsError;
 
       // Create a map of teams for quick lookup
       const teamsMap = new Map<number, Team>();
-      teamsData?.forEach(team => {
+      teamsData?.forEach((team) => {
         teamsMap.set(team.id, team);
       });
 
@@ -852,7 +817,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
   const calculateTeamStats = () => {
     const teamStats = new Map<number, any>();
 
-    fixtures.forEach(fixture => {
+    fixtures.forEach((fixture) => {
       if (!fixture.goals) return;
 
       const homeTeamId = fixture.home_team_id;
@@ -931,7 +896,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 
     // Convert to array and sort by points
     const statsArray = Array.from(teamStats.values())
-      .map(stat => ({
+      .map((stat) => ({
         ...stat,
         matches: stat.matches.slice(0, 5),
         goalDiff: stat.goalsFor - stat.goalsAgainst,
@@ -984,11 +949,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                   </div>
                   {teamData?.logo && (
                     <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center">
-                      <img
-                        src={teamData.logo}
-                        alt={teamData.name}
-                        className="h-full w-full object-contain"
-                      />
+                      <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
                     </div>
                   )}
                   <div>
@@ -1001,8 +962,8 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                             result === "W"
                               ? "bg-emerald-500/20 text-emerald-400"
                               : result === "D"
-                              ? "bg-amber-500/20 text-amber-400"
-                              : "bg-red-500/20 text-red-400"
+                                ? "bg-amber-500/20 text-amber-400"
+                                : "bg-red-500/20 text-red-400"
                           }`}
                         >
                           {result}
@@ -1019,12 +980,17 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                     <div className="text-xs text-muted-foreground font-medium">Points</div>
                   </div>
                   <div>
-                    <div className="text-lg font-semibold">{team.goalsFor}:{team.goalsAgainst}</div>
+                    <div className="text-lg font-semibold">
+                      {team.goalsFor}:{team.goalsAgainst}
+                    </div>
                     <div className="text-xs text-muted-foreground">GF:GA</div>
                   </div>
                   <div>
-                    <div className={`text-lg font-semibold ${team.goalDiff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {team.goalDiff >= 0 ? '+' : ''}{team.goalDiff}
+                    <div
+                      className={`text-lg font-semibold ${team.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                    >
+                      {team.goalDiff >= 0 ? "+" : ""}
+                      {team.goalDiff}
                     </div>
                     <div className="text-xs text-muted-foreground">GD</div>
                   </div>
@@ -1042,16 +1008,15 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                         isWin
                           ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
                           : isDraw
-                          ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
-                          : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
+                            ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                            : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
                       }`}
                     >
                       <div className="text-[10px] text-muted-foreground mb-1 font-medium">
-                        {new Date(match.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {new Date(match.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </div>
                       <div className="text-xs mb-2 line-clamp-2 h-8">
-                        <span className="text-muted-foreground">{match.home ? "vs" : "@"}</span>{" "}
-                        {match.opponent}
+                        <span className="text-muted-foreground">{match.home ? "vs" : "@"}</span> {match.opponent}
                       </div>
                       <div className="text-sm font-bold">{match.score}</div>
                     </div>
@@ -1065,7 +1030,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 
       {/* League Table - Right side (1/3) */}
       <div className="space-y-6">
-        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 sticky top-6">
+        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50  top-6">
           <div className="flex items-center gap-2 mb-6">
             <Trophy className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold">League Table</h2>
@@ -1076,7 +1041,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
               const teamData = teams.get(team.id);
               const isTopFour = idx < 4;
               const isRelegation = idx >= topTeams.length - 3;
-              
+
               return (
                 <div
                   key={team.id}
@@ -1089,24 +1054,18 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                       isTopFour
                         ? "bg-primary/20 text-primary"
                         : isRelegation
-                        ? "bg-red-500/20 text-red-400"
-                        : "bg-muted text-muted-foreground"
+                          ? "bg-red-500/20 text-red-400"
+                          : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {idx + 1}
                   </div>
                   {teamData?.logo && (
                     <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center">
-                      <img
-                        src={teamData.logo}
-                        alt={teamData.name}
-                        className="h-full w-full object-contain"
-                      />
+                      <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
                     </div>
                   )}
-                  <span className="flex-1 text-sm font-medium truncate">
-                    {teamData?.name || "Unknown"}
-                  </span>
+                  <span className="flex-1 text-sm font-medium truncate">{teamData?.name || "Unknown"}</span>
                   <span className="text-sm font-bold">{team.points}</span>
                 </div>
               );
@@ -1133,9 +1092,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
     const fetchScorersData = async () => {
       try {
         // Fetch teams
-        const { data: teamsData } = await supabase
-          .from("teams")
-          .select("*");
+        const { data: teamsData } = await supabase.from("teams").select("*");
 
         const teamsMap = new Map<number, Team>();
         teamsData?.forEach((team) => {
@@ -1184,9 +1141,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
               key={scorer.id}
               className="flex items-center gap-4 p-4 rounded-lg bg-card/50 backdrop-blur border border-border/50 hover:bg-accent/50 transition-colors"
             >
-              <div className="text-2xl font-bold text-muted-foreground w-8">
-                {index + 1}
-              </div>
+              <div className="text-2xl font-bold text-muted-foreground w-8">{index + 1}</div>
 
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">
@@ -1195,11 +1150,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {team?.logo && (
                     <div className="h-4 w-4 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
-                      <img
-                        src={team.logo}
-                        alt={team.name}
-                        className="h-full w-full object-contain"
-                      />
+                      <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
                     </div>
                   )}
                   <span>{team?.name || "Unknown"}</span>
