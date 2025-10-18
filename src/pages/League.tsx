@@ -45,7 +45,6 @@ const League = () => {
 
   useEffect(() => {
     fetchLeague();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const fetchLeague = async () => {
@@ -64,7 +63,7 @@ const League = () => {
   if (loading) {
     return (
       <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
+        <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
           <AppSidebar />
           <div className="flex-1">
             <header className="h-14 border-b flex items-center px-4 bg-card/50">
@@ -223,12 +222,12 @@ const League = () => {
 
               {/* Tabs */}
               <div className="border-b mb-6">
-                <div className="flex gap-6 overflow-x-auto no-scrollbar">
+                <div className="flex gap-6">
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`pb-3 px-1 font-medium transition-colors relative whitespace-nowrap ${
+                      className={`pb-3 px-1 font-medium transition-colors relative ${
                         activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -257,7 +256,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isSubscribed } = useSubscription();
+  const { isSubscribed, loading: subscriptionLoading } = useSubscription();
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
   const [standings, setStandings] = useState<any[]>([]);
@@ -271,24 +270,29 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
     if (user) {
       fetchFavorites();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, user]);
 
   const fetchFixtures = async () => {
     try {
+      // Fetch upcoming fixtures (NS = Not Started) for this league
       const { data: fixturesData, error: fixturesError } = await supabase
         .from("fixtures")
         .select("*, goals")
         .eq("league_id", leagueId)
         .eq("status", "NS")
+        // .gte("date", new Date().toISOString())
         .order("date", { ascending: true })
         .limit(4);
 
       if (fixturesError) throw fixturesError;
+      console.log("FixturesData", fixturesData);
 
+      // Fetch all teams
       const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
+
       if (teamsError) throw teamsError;
 
+      // Create a map of teams for quick lookup
       const teamsMap = new Map<number, Team>();
       teamsData?.forEach((team) => {
         teamsMap.set(team.id, team);
@@ -313,6 +317,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
         .limit(10);
 
       if (error) throw error;
+
       setStandings(data || []);
     } catch (error) {
       console.error("Error fetching standings:", error);
@@ -324,6 +329,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
     try {
       const { data, error } = await supabase.from("user_favorites").select("fixture_id").eq("user_id", user.id);
+
       if (error) throw error;
 
       const favoriteIds = new Set(data?.map((f) => f.fixture_id) || []);
@@ -347,30 +353,48 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
     try {
       if (isFavorited) {
+        // Remove from favorites
         const { error } = await supabase
           .from("user_favorites")
           .delete()
           .eq("user_id", user.id)
           .eq("fixture_id", fixtureId);
+
         if (error) throw error;
 
         setFavorites((prev) => {
-          const next = new Set(prev);
-          next.delete(fixtureId);
-          return next;
+          const newFavorites = new Set(prev);
+          newFavorites.delete(fixtureId);
+          return newFavorites;
         });
 
-        toast({ title: "Removed from favorites", description: "Match removed from your favorites" });
+        toast({
+          title: "Removed from favorites",
+          description: "Match removed from your favorites",
+        });
       } else {
-        const { error } = await supabase.from("user_favorites").insert({ user_id: user.id, fixture_id: fixtureId });
+        // Add to favorites
+        const { error } = await supabase.from("user_favorites").insert({
+          user_id: user.id,
+          fixture_id: fixtureId,
+        });
+
         if (error) throw error;
 
         setFavorites((prev) => new Set(prev).add(fixtureId));
-        toast({ title: "Added to favorites", description: "Match added to your favorites" });
+
+        toast({
+          title: "Added to favorites",
+          description: "Match added to your favorites",
+        });
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
-      toast({ title: "Error", description: "Failed to update favorites", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+      });
     }
   };
 
@@ -404,10 +428,10 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
           return (
             <div
               key={fixture.id}
-              className="border rounded-xl lg:p-6 p-3 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
+              className="border rounded-xl lg:p-6 p-1 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
             >
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div className="text-xs sm:text-sm text-muted-foreground font-medium">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground font-medium">
                   {fixtureDate.toLocaleDateString("en-US", {
                     weekday: "long",
                     month: "long",
@@ -415,16 +439,19 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                     year: "numeric",
                   })}
                 </div>
-                <div className="text-xs sm:text-sm font-medium">
-                  {fixtureDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                <div className="text-sm font-medium">
+                  {fixtureDate.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-6 items-center">
+              <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-center">
                 {/* Home Team */}
-                <div className="flex items-center gap-2 sm:gap-4 justify-end">
+                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1 lg:justify-end justif-center">
                   <div className="text-right">
-                    <h3 className="text-sm sm:text-base font-bold">{homeTeam?.name || "Unknown"}</h3>
+                    <h3 className="lg:text-lg text-sm sm:text-base font-bold">{homeTeam?.name || "Unknown"}</h3>
                   </div>
                   {homeTeam?.logo && (
                     <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-background/50 p-1 sm:p-2 flex items-center justify-center flex-shrink-0">
@@ -434,34 +461,34 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
                 </div>
 
                 {/* Score or VS */}
-                <div className="flex items-center justify-center min-w-[40px] sm:min-w-[60px] lg:min-w-[80px]">
+                <div className="flex items-center justify-center lg:min-w-[80px] min-w-[20px] sm:min-w-[40px]">
                   {fixture.status === "FT" && hasScore ? (
-                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
+                    <div className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
                       {fixture.goals.home} - {fixture.goals.away}
                     </div>
                   ) : (
-                    <div className="text-sm sm:text-base lg:text-lg font-semibold text-muted-foreground">VS</div>
+                    <div className="lg:text-lg sm:text-base text-sm font-semibold text-muted-foreground">VS</div>
                   )}
                 </div>
 
                 {/* Away Team */}
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1">
                   {awayTeam?.logo && (
                     <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 rounded-xl bg-background/50 p-1 sm:p-2 flex items-center justify-center flex-shrink-0">
                       <img src={awayTeam.logo} alt={awayTeam.name} className="h-full w-full object-contain" />
                     </div>
                   )}
                   <div>
-                    <h3 className="text-sm sm:text-base lg:text-lg font-bold">{awayTeam?.name || "Unknown"}</h3>
+                    <h3 className="lg:text-lg  sm:text-base text-sm font-bold">{awayTeam?.name || "Unknown"}</h3>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-4 border-t flex items-center justify-between gap-4">
                 {fixture.venue && (
-                  <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
                     <span>📍</span>
-                    <span className="truncate">{fixture.venue}</span>
+                    <span>{fixture.venue}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
@@ -519,7 +546,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
       {/* Sidebar - Right side (1/3) */}
       <div className="space-y-6">
         {/* League Table */}
-        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 top-6">
+        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50  top-6">
           <div className="flex items-center gap-2 mb-6">
             <Trophy className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold">League Table</h2>
@@ -615,7 +642,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
   );
 };
 
-// Table Tab Component (mobile-optimized)
+// Table Tab Component
 const TableTab = ({ leagueId }: { leagueId: number }) => {
   const [standings, setStandings] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
@@ -624,6 +651,7 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
   useEffect(() => {
     const fetchTableData = async () => {
       try {
+        // Fetch teams
         const { data: teamsData } = await supabase.from("teams").select("*");
 
         const teamsMap = new Map<number, Team>();
@@ -632,6 +660,7 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
         });
         setTeams(teamsMap);
 
+        // Fetch standings from database (populated by sync function)
         const { data: standingsData, error } = await supabase
           .from("standings")
           .select("*")
@@ -639,6 +668,7 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
           .order("rank", { ascending: true });
 
         if (error) throw error;
+
         setStandings(standingsData || []);
       } catch (error) {
         console.error("Error fetching table data:", error);
@@ -652,9 +682,9 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        {[...Array(8)].map((_, i) => (
-          <Skeleton key={i} className="h-14 w-full" />
+      <div className="space-y-4">
+        {[...Array(10)].map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
         ))}
       </div>
     );
@@ -662,135 +692,86 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
 
   return (
     <div className="space-y-4">
-      {/* Mobile cards */}
-      <div className="md:hidden grid grid-cols-1 gap-3">
-        {standings.map((standing, index) => {
-          const team = teams.get(standing.team_id);
-          const top4 = index < 4;
-          const europa = index >= 4 && index < 6;
-          const relegation = index >= standings.length - 3;
-
-          return (
-            <div
-              key={standing.team_id}
-              className={`flex items-center justify-between gap-3 rounded-xl border p-3 bg-card/60
-              ${top4 ? "ring-1 ring-primary/20" : ""}
-              ${europa ? "ring-1 ring-blue-500/15" : ""}
-              ${relegation ? "ring-1 ring-red-500/15" : ""}`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className={`h-7 w-7 shrink-0 rounded text-xs font-bold grid place-items-center
-                    ${top4 ? "bg-primary/20 text-primary" : relegation ? "bg-red-500/15 text-red-500" : "bg-muted text-muted-foreground"}`}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border/50 text-sm text-muted-foreground">
+              <th className="text-left py-3 px-2 font-semibold">#</th>
+              <th className="text-left py-3 px-2 font-semibold">Team</th>
+              <th className="text-center py-3 px-2 font-semibold">P</th>
+              <th className="text-center py-3 px-2 font-semibold">W</th>
+              <th className="text-center py-3 px-2 font-semibold">D</th>
+              <th className="text-center py-3 px-2 font-semibold">L</th>
+              <th className="text-center py-3 px-2 font-semibold">GF</th>
+              <th className="text-center py-3 px-2 font-semibold">GA</th>
+              <th className="text-center py-3 px-2 font-semibold">GD</th>
+              <th className="text-center py-3 px-2 font-semibold">Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {standings.map((standing, index) => {
+              const team = teams.get(standing.team_id);
+              return (
+                <tr
+                  key={standing.team_id}
+                  className={`border-b border-border/30 hover:bg-accent/50 transition-colors ${
+                    index < 4
+                      ? "bg-emerald-500/5"
+                      : index < 6
+                        ? "bg-blue-500/5"
+                        : index >= standings.length - 3
+                          ? "bg-red-500/5"
+                          : ""
+                  }`}
                 >
-                  {standing.rank}
-                </div>
-
-                {team?.logo && (
-                  <div className="h-7 w-7 shrink-0 rounded bg-background/50 p-0.5 grid place-items-center">
-                    <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
-                  </div>
-                )}
-
-                <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{team?.name || "Unknown"}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    P{standing.played} • W{standing.win} D{standing.draw} L{standing.lose} • GD{" "}
-                    {standing.goal_diff > 0 ? `+${standing.goal_diff}` : standing.goal_diff}
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <div className="text-base font-semibold">{standing.points}</div>
-                <div className="text-[11px] text-muted-foreground">Pts</div>
-              </div>
-            </div>
-          );
-        })}
+                  <td className="py-3 px-2 text-sm font-medium">{standing.rank}</td>
+                  <td className="py-3 px-2">
+                    <div className="flex items-center gap-2">
+                      {team?.logo && (
+                        <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center flex-shrink-0">
+                          <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">{team?.name || "Unknown"}</span>
+                    </div>
+                  </td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.played}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.win}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.draw}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.lose}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.goals_for}</td>
+                  <td className="text-center py-3 px-2 text-sm">{standing.goals_against}</td>
+                  <td className="text-center py-3 px-2 text-sm font-medium">
+                    {standing.goal_diff > 0 ? "+" : ""}
+                    {standing.goal_diff}
+                  </td>
+                  <td className="text-center py-3 px-2 text-sm font-bold">{standing.points}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* Desktop table */}
-      <div className="hidden md:block">
-        <div className="overflow-x-auto rounded-xl border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/30 text-muted-foreground">
-                <th className="text-left py-3 px-3 font-semibold">#</th>
-                <th className="text-left py-3 px-3 font-semibold">Team</th>
-                <th className="text-center py-3 px-3 font-semibold">P</th>
-                <th className="text-center py-3 px-3 font-semibold">W</th>
-                <th className="text-center py-3 px-3 font-semibold">D</th>
-                <th className="text-center py-3 px-3 font-semibold">L</th>
-                <th className="text-center py-3 px-3 font-semibold">GF</th>
-                <th className="text-center py-3 px-3 font-semibold">GA</th>
-                <th className="text-center py-3 px-3 font-semibold">GD</th>
-                <th className="text-center py-3 px-3 font-semibold">Pts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((standing, index) => {
-                const team = teams.get(standing.team_id);
-                const rowTint =
-                  index < 4
-                    ? "bg-emerald-500/5"
-                    : index < 6
-                      ? "bg-blue-500/5"
-                      : index >= standings.length - 3
-                        ? "bg-red-500/5"
-                        : "";
-
-                return (
-                  <tr key={standing.team_id} className={`border-b hover:bg-accent/50 transition-colors ${rowTint}`}>
-                    <td className="py-3 px-3 font-medium">{standing.rank}</td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {team?.logo && (
-                          <div className="h-6 w-6 rounded bg-background/50 p-0.5 grid place-items-center">
-                            <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
-                          </div>
-                        )}
-                        <span className="font-medium truncate">{team?.name || "Unknown"}</span>
-                      </div>
-                    </td>
-                    <td className="text-center py-3 px-3">{standing.played}</td>
-                    <td className="text-center py-3 px-3">{standing.win}</td>
-                    <td className="text-center py-3 px-3">{standing.draw}</td>
-                    <td className="text-center py-3 px-3">{standing.lose}</td>
-                    <td className="text-center py-3 px-3">{standing.goals_for}</td>
-                    <td className="text-center py-3 px-3">{standing.goals_against}</td>
-                    <td className="text-center py-3 px-3 font-medium">
-                      {standing.goal_diff > 0 ? "+" : ""}
-                      {standing.goal_diff}
-                    </td>
-                    <td className="text-center py-3 px-3 font-bold">{standing.points}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded bg-emerald-500/20 border border-emerald-500/40"></div>
+          <span className="text-muted-foreground">Champions League</span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded bg-emerald-500/20 border border-emerald-500/40"></div>
-            <span className="text-muted-foreground">Champions League</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded bg-blue-500/20 border border-blue-500/40"></div>
-            <span className="text-muted-foreground">Europa League</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded bg-red-500/20 border border-red-500/40"></div>
-            <span className="text-muted-foreground">Relegation</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded bg-blue-500/20 border border-blue-500/40"></div>
+          <span className="text-muted-foreground">Europa League</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-3 rounded bg-red-500/20 border border-red-500/40"></div>
+          <span className="text-muted-foreground">Relegation</span>
         </div>
       </div>
     </div>
   );
 };
 
-// Form Tab Component (mobile-optimized)
+// Form Tab Component
 const FormTab = ({ leagueId }: { leagueId: number }) => {
   const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
@@ -798,23 +779,26 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 
   useEffect(() => {
     fetchRealData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId]);
 
   const fetchRealData = async () => {
     try {
+      // Fetch fixtures for this league
       const { data: fixturesData, error: fixturesError } = await supabase
         .from("fixtures")
         .select("*, goals")
         .eq("league_id", leagueId)
         .order("date", { ascending: false })
-        .limit(120);
+        .limit(100);
 
       if (fixturesError) throw fixturesError;
 
+      // Fetch all teams
       const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
+
       if (teamsError) throw teamsError;
 
+      // Create a map of teams for quick lookup
       const teamsMap = new Map<number, Team>();
       teamsData?.forEach((team) => {
         teamsMap.set(team.id, team);
@@ -829,6 +813,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
     }
   };
 
+  // Calculate team stats from fixtures
   const calculateTeamStats = () => {
     const teamStats = new Map<number, any>();
 
@@ -840,6 +825,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
       const homeGoals = fixture.goals.home;
       const awayGoals = fixture.goals.away;
 
+      // Initialize stats if needed
       if (!teamStats.has(homeTeamId)) {
         teamStats.set(homeTeamId, {
           id: homeTeamId,
@@ -868,11 +854,13 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
       const homeStats = teamStats.get(homeTeamId);
       const awayStats = teamStats.get(awayTeamId);
 
+      // Update goals
       homeStats.goalsFor += homeGoals;
       homeStats.goalsAgainst += awayGoals;
       awayStats.goalsFor += awayGoals;
       awayStats.goalsAgainst += homeGoals;
 
+      // Update results
       if (homeGoals > awayGoals) {
         homeStats.wins++;
         homeStats.points += 3;
@@ -888,6 +876,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
         awayStats.points += 1;
       }
 
+      // Add match to history (limit to last 5)
       homeStats.matches.unshift({
         date: fixture.date,
         opponent: teams.get(awayTeamId)?.name || "Unknown",
@@ -905,6 +894,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
       });
     });
 
+    // Convert to array and sort by points
     const statsArray = Array.from(teamStats.values())
       .map((stat) => ({
         ...stat,
@@ -917,7 +907,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
         if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
         return b.goalsFor - a.goalsFor;
       })
-      .slice(0, 10);
+      .slice(0, 10); // Top 10 teams
 
     return statsArray;
   };
@@ -938,11 +928,11 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left: Team Form (2/3 on lg) */}
+      {/* Team Form Analysis - Left side (2/3) */}
       <div className="lg:col-span-2 space-y-4">
-        <div className="flex items-center gap-2 mb-2 sm:mb-4">
-          <div className="h-6 w-1 sm:h-8 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
-          <h2 className="text-xl sm:text-2xl font-bold">Team Form Analysis</h2>
+        <div className="flex items-center gap-2 mb-6">
+          <div className="h-8 w-1 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+          <h2 className="text-2xl font-bold">Team Form Analysis</h2>
         </div>
 
         {topTeams.slice(0, 5).map((team, idx) => {
@@ -950,34 +940,31 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
           return (
             <div
               key={team.id}
-              className="group border rounded-xl p-3 sm:p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
+              className="group border rounded-xl p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
             >
-              {/* Header row */}
-              <div className="flex items-start justify-between gap-3 sm:gap-6 mb-4 sm:mb-6">
-                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                  <div className="flex items-center justify-center w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-sm sm:text-xl font-bold shrink-0">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-xl font-bold">
                     {idx + 1}
                   </div>
                   {teamData?.logo && (
-                    <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl bg-background/50 p-1.5 sm:p-2 grid place-items-center shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-background/50 p-2 flex items-center justify-center">
                       <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
                     </div>
                   )}
-                  <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg font-bold truncate">{teamData?.name || "Unknown Team"}</h3>
-                    {/* Form chips */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+                  <div>
+                    <h3 className="text-lg font-bold">{teamData?.name || "Unknown Team"}</h3>
+                    <div className="flex items-center gap-2 mt-1">
                       {team.form.map((result: string, formIdx: number) => (
                         <div
                           key={formIdx}
-                          className={`h-5 w-5 sm:h-6 sm:w-6 rounded text-[10px] sm:text-[11px] font-bold grid place-items-center
-                            ${
-                              result === "W"
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : result === "D"
-                                  ? "bg-amber-500/20 text-amber-400"
-                                  : "bg-red-500/20 text-red-400"
-                            }`}
+                          className={`h-5 w-5 rounded text-[10px] font-bold flex items-center justify-center ${
+                            result === "W"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : result === "D"
+                                ? "bg-amber-500/20 text-amber-400"
+                                : "bg-red-500/20 text-red-400"
+                          }`}
                         >
                           {result}
                         </div>
@@ -985,74 +972,68 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                     </div>
                   </div>
                 </div>
-
-                {/* Key numbers */}
-                <div className="flex gap-4 sm:gap-6 text-right shrink-0">
+                <div className="flex gap-6 text-right">
                   <div>
-                    <div className="text-lg sm:text-2xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
+                    <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
                       {team.points}
                     </div>
-                    <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">Points</div>
+                    <div className="text-xs text-muted-foreground font-medium">Points</div>
                   </div>
                   <div>
-                    <div className="text-sm sm:text-lg font-semibold">
+                    <div className="text-lg font-semibold">
                       {team.goalsFor}:{team.goalsAgainst}
                     </div>
-                    <div className="text-[11px] sm:text-xs text-muted-foreground">GF:GA</div>
+                    <div className="text-xs text-muted-foreground">GF:GA</div>
                   </div>
                   <div>
                     <div
-                      className={`text-sm sm:text-lg font-semibold ${team.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                      className={`text-lg font-semibold ${team.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}
                     >
                       {team.goalDiff >= 0 ? "+" : ""}
                       {team.goalDiff}
                     </div>
-                    <div className="text-[11px] sm:text-xs text-muted-foreground">GD</div>
+                    <div className="text-xs text-muted-foreground">GD</div>
                   </div>
                 </div>
               </div>
 
-              {/* Last 5 matches — horizontal scroll on mobile */}
-              <div className="overflow-x-auto -mx-1 sm:mx-0 pb-1 sm:pb-0">
-                <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
-                  {team.matches.map((match: any, matchIdx: number) => {
-                    const isWin = match.result === "W";
-                    const isDraw = match.result === "D";
-                    return (
-                      <div
-                        key={matchIdx}
-                        className={`relative shrink-0 w-[46%] sm:w-auto snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
-                          ${
-                            isWin
-                              ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
-                              : isDraw
-                                ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
-                                : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
-                          }`}
-                      >
-                        <div className="text-[10px] text-muted-foreground mb-1 font-medium">
-                          {new Date(match.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        </div>
-                        <div className="text-[11px] sm:text-xs mb-1.5 sm:mb-2 line-clamp-2 h-7 sm:h-8">
-                          <span className="text-muted-foreground">{match.home ? "vs" : "@"}</span> {match.opponent}
-                        </div>
-                        <div className="text-sm sm:text-base font-bold">{match.score}</div>
+              <div className="grid grid-cols-5 gap-3">
+                {team.matches.map((match: any, matchIdx: number) => {
+                  const isWin = match.result === "W";
+                  const isDraw = match.result === "D";
+                  return (
+                    <div
+                      key={matchIdx}
+                      className={`relative overflow-hidden rounded-lg p-3 border transition-all ${
+                        isWin
+                          ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
+                          : isDraw
+                            ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                            : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-muted-foreground mb-1 font-medium">
+                        {new Date(match.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="text-xs mb-2 line-clamp-2 h-8">
+                        <span className="text-muted-foreground">{match.home ? "vs" : "@"}</span> {match.opponent}
+                      </div>
+                      <div className="text-sm font-bold">{match.score}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Right: League Table preview (full width on mobile) */}
-      <div className="space-y-4">
-        <div className="border rounded-xl p-4 sm:p-6 bg-gradient-to-br from-card to-card/50 sticky top-6">
-          <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            <h2 className="text-base sm:text-lg font-bold">League Table</h2>
+      {/* League Table - Right side (1/3) */}
+      <div className="space-y-6">
+        <div className="border rounded-xl p-6 bg-gradient-to-br from-card to-card/50  top-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Trophy className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-bold">League Table</h2>
           </div>
 
           <div className="space-y-1">
@@ -1064,17 +1045,23 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
               return (
                 <div
                   key={team.id}
-                  className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all hover:bg-accent/50
-                    ${isTopFour ? "bg-primary/5" : ""}`}
+                  className={`flex items-center gap-3 py-3 px-3 rounded-lg transition-all hover:bg-accent/50 ${
+                    isTopFour ? "bg-primary/5" : ""
+                  }`}
                 >
                   <div
-                    className={`h-6 w-6 rounded text-[11px] font-bold grid place-items-center
-                      ${isTopFour ? "bg-primary/20 text-primary" : isRelegation ? "bg-red-500/20 text-red-400" : "bg-muted text-muted-foreground"}`}
+                    className={`flex items-center justify-center h-6 w-6 rounded text-xs font-bold ${
+                      isTopFour
+                        ? "bg-primary/20 text-primary"
+                        : isRelegation
+                          ? "bg-red-500/20 text-red-400"
+                          : "bg-muted text-muted-foreground"
+                    }`}
                   >
                     {idx + 1}
                   </div>
                   {teamData?.logo && (
-                    <div className="h-6 w-6 rounded bg-background/50 p-0.5 grid place-items-center">
+                    <div className="h-6 w-6 rounded bg-background/50 p-0.5 flex items-center justify-center">
                       <img src={teamData.logo} alt={teamData.name} className="h-full w-full object-contain" />
                     </div>
                   )}
@@ -1085,7 +1072,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
             })}
           </div>
 
-          <Button variant="link" className="w-full mt-3 sm:mt-4 text-primary group">
+          <Button variant="link" className="w-full mt-4 text-primary group">
             View Full Table
             <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
           </Button>
@@ -1104,6 +1091,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
   useEffect(() => {
     const fetchScorersData = async () => {
       try {
+        // Fetch teams
         const { data: teamsData } = await supabase.from("teams").select("*");
 
         const teamsMap = new Map<number, Team>();
@@ -1112,6 +1100,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
         });
         setTeams(teamsMap);
 
+        // Fetch top scorers from database (populated by sync function)
         const { data: scorersData, error } = await supabase
           .from("top_scorers")
           .select("*")
@@ -1154,9 +1143,9 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
             >
               <div className="text-2xl font-bold text-muted-foreground w-8">{index + 1}</div>
 
-              <div className="flex-1 min-w-0">
+              <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">
-                  <h3 className="font-semibold text-lg truncate">{scorer.player_name}</h3>
+                  <h3 className="font-semibold text-lg">{scorer.player_name}</h3>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   {team?.logo && (
@@ -1164,7 +1153,7 @@ const ScorersTab = ({ leagueId }: { leagueId: number }) => {
                       <img src={team.logo} alt={team.name} className="h-full w-full object-contain" />
                     </div>
                   )}
-                  <span className="truncate">{team?.name || "Unknown"}</span>
+                  <span>{team?.name || "Unknown"}</span>
                 </div>
               </div>
 
