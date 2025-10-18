@@ -486,7 +486,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
               <div className="mt-4 pt-4 border-t flex items-center justify-between gap-4">
                 {fixture.venue && (
-                  <div className="sm:text-sm text-base text-muted-foreground flex items-center gap-2">
+                  <div className="lg:text-sm text-xs text-muted-foreground flex items-center gap-2">
                     <span>📍</span>
                     <span>{fixture.venue}</span>
                   </div>
