@@ -449,7 +449,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
               <div className="grid grid-cols-[1fr_auto_1fr] gap-6 items-center">
                 {/* Home Team */}
-                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1 lg:justify-end justif-center">
+                <div className="flex items-center sm:gap-2 lg:gap-4 gap-1 lg:justify-end justify-center">
                   <div className="text-right">
                     <h3 className="lg:text-lg text-sm sm:text-base font-bold">{homeTeam?.name || "Unknown"}</h3>
                   </div>
@@ -486,7 +486,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
 
               <div className="mt-4 pt-4 border-t flex items-center justify-between gap-4">
                 {fixture.venue && (
-                  <div className="lg:text-sm text-xs text-muted-foreground flex items-center gap-2">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
                     <span>📍</span>
                     <span>{fixture.venue}</span>
                   </div>
