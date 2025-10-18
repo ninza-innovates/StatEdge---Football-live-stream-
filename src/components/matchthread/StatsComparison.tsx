@@ -2,8 +2,8 @@ import { Card } from "@/components/ui/card";
 
 interface StatsComparisonProps {
   keyStats: {
-    home_goals_avg?: number;
-    away_goals_avg?: number;
+    home_avg_goals?: number;
+    away_avg_goals?: number;
     home_xg_avg?: number;
     away_xg_avg?: number;
     home_possession?: number;
@@ -20,32 +20,32 @@ interface StatsComparisonProps {
 export function StatsComparison({ keyStats }: StatsComparisonProps) {
   const stats = [
     {
-      label: 'Avg Goals Scored',
+      label: "Avg Goals Scored",
       home: keyStats.home_goals_avg || 0,
       away: keyStats.away_goals_avg || 0,
     },
     {
-      label: 'Avg Expected Goals (xG)',
+      label: "Avg Expected Goals (xG)",
       home: keyStats.home_xg_avg || 0,
       away: keyStats.away_xg_avg || 0,
     },
     {
-      label: 'Avg Possession %',
+      label: "Avg Possession %",
       home: keyStats.home_possession || 0,
       away: keyStats.away_possession || 0,
     },
     {
-      label: 'Avg Shots on Target',
+      label: "Avg Shots on Target",
       home: keyStats.home_shots_on_target || 0,
       away: keyStats.away_shots_on_target || 0,
     },
     {
-      label: 'Avg Corners',
+      label: "Avg Corners",
       home: keyStats.home_corners_avg || 0,
       away: keyStats.away_corners_avg || 0,
     },
     {
-      label: 'Avg Goals Conceded',
+      label: "Avg Goals Conceded",
       home: keyStats.home_goals_against_avg || 0,
       away: keyStats.away_goals_against_avg || 0,
     },
@@ -54,7 +54,7 @@ export function StatsComparison({ keyStats }: StatsComparisonProps) {
   return (
     <Card className="p-4 sm:p-6">
       <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Key Match Statistics</h2>
-      
+
       <div className="space-y-4 sm:space-y-6">
         {stats.map((stat, index) => {
           const total = stat.home + stat.away;
@@ -68,16 +68,10 @@ export function StatsComparison({ keyStats }: StatsComparisonProps) {
                 <span className="text-muted-foreground text-center flex-1 truncate px-2">{stat.label}</span>
                 <span className="text-foreground min-w-[2.5rem] text-left">{stat.away.toFixed(1)}</span>
               </div>
-              
+
               <div className="flex h-2 rounded-full overflow-hidden bg-muted">
-                <div 
-                  className="bg-primary transition-all duration-500"
-                  style={{ width: `${homePercent}%` }}
-                />
-                <div 
-                  className="bg-destructive transition-all duration-500"
-                  style={{ width: `${awayPercent}%` }}
-                />
+                <div className="bg-primary transition-all duration-500" style={{ width: `${homePercent}%` }} />
+                <div className="bg-destructive transition-all duration-500" style={{ width: `${awayPercent}%` }} />
               </div>
             </div>
           );

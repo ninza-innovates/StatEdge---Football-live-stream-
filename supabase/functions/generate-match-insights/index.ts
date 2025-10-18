@@ -1,109 +1,120 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY');
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-
-const PREMIER_LEAGUE_ID = 39;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const RAPIDAPI_KEY = "8ea72576efbc62e0e2f7851591b7ba8c"; // consider moving to env/secret
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+// Fallback if your fixtures table doesn't store a season per-row
 const CURRENT_SEASON = 2025;
-
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-async function callRapidAPI(endpoint: string) {
-  const response = await fetch(`https://api-football-v1.p.rapidapi.com/v3/${endpoint}`, {
+async function callRapidAPI(endpoint) {
+  const response = await fetch(`https://v3.football.api-sports.io/${endpoint}`, {
     headers: {
-      'x-rapidapi-key': RAPIDAPI_KEY!,
-      'x-rapidapi-host': 'api-football-v1.p.rapidapi.com'
-    }
+      "x-rapidapi-key": RAPIDAPI_KEY,
+      "x-rapidapi-host": "v3.football.api-sports.io",
+    },
   });
-  
   if (!response.ok) {
-    throw new Error(`API-Football error: ${response.status}`);
+    const text = await response.text().catch(() => "");
+    throw new Error(`API-Football error: ${response.status} ${text}`);
   }
-  
   return await response.json();
 }
-
-async function getFixturesForAIGeneration() {
-  const twentyFourHours = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  const thirtySixHours = new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString();
-  
-  const { data: fixtures, error } = await supabase
-    .from('fixtures')
-    .select(`
-      *,
-      home_team:teams!fixtures_home_team_id_fkey(id, name, logo, country, venue),
-      away_team:teams!fixtures_away_team_id_fkey(id, name, logo, country, venue),
-      league:leagues!fixtures_league_id_fkey(id, name, slug)
-    `)
-    .eq('league_id', PREMIER_LEAGUE_ID)
-    .eq('status', 'NS')
-    .gte('date', twentyFourHours)
-    .lte('date', thirtySixHours)
-    .limit(50);
-  
-  if (error) {
-    console.error('Error fetching fixtures:', error);
+/**
+ * Pull fixtures scheduled between +24h and +36h, status=NS,
+ * for ALL leagues in your `fixtures` table (no league filter).
+ * Skips those that already have an ai_summaries row.
+ */ async function getFixturesForAIGeneration() {
+  const from = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
+  const to = new Date(Date.now() + 36 * 60 * 60 * 1000).toISOString();
+  // 1) Get all summarized fixture IDs (we’ll exclude them)
+  const { data: summarized, error: sErr } = await supabase.from("ai_summaries").select("fixture_id");
+  if (sErr) {
+    console.error("Fetch summarized IDs failed:", sErr);
     return [];
   }
-  
-  const fixturesWithoutSummaries = [];
-  for (const fixture of fixtures || []) {
-    const { data: existingSummary } = await supabase
-      .from('ai_summaries')
-      .select('id')
-      .eq('fixture_id', fixture.id)
-      .single();
-    
-    if (!existingSummary) {
-      fixturesWithoutSummaries.push(fixture);
-    }
+  const summarizedIds = (summarized ?? []).map((r) => r.fixture_id).filter(Boolean);
+  // 2) Fetch fixtures in window, excluding summarized ones
+  const query = supabase
+    .from("fixtures")
+    .select(
+      `
+      *,
+      home_team:teams!fixtures_home_team_id_fkey(id,name,logo,country,venue),
+      away_team:teams!fixtures_away_team_id_fkey(id,name,logo,country,venue),
+      league:leagues!fixtures_league_id_fkey(id,name,slug)
+    `,
+    )
+    .eq("status", "NS")
+    .gte("date", from)
+    .lte("date", to)
+    .order("date", {
+      ascending: true,
+    })
+    .limit(5);
+  if (summarizedIds.length) {
+    query.not("id", "in", `(${summarizedIds.join(",")})`);
   }
-  
-  return fixturesWithoutSummaries;
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error fetching fixtures:", error);
+    return [];
+  }
+  return data ?? [];
 }
-
-async function getTeamStats(teamId: number) {
+/**
+ * Fetch stats for a team given the specific league and season.
+ */ async function getTeamStats(params) {
+  const { teamId, leagueId, season } = params;
   try {
-    const data = await callRapidAPI(`teams/statistics?league=${PREMIER_LEAGUE_ID}&season=${CURRENT_SEASON}&team=${teamId}`);
+    const data = await callRapidAPI(`teams/statistics?league=${leagueId}&season=${season}&team=${teamId}`);
     const stats = data.response;
-    
     return {
-      form: stats?.form || 'N/A',
-      goalsFor: stats?.goals?.for?.total?.total || 0,
-      goalsAgainst: stats?.goals?.against?.total?.total || 0,
-      rank: stats?.league?.position || 'N/A',
-      homeWins: stats?.fixtures?.wins?.home || 0,
-      homeDraws: stats?.fixtures?.draws?.home || 0,
-      homeLosses: stats?.fixtures?.loses?.home || 0,
-      awayWins: stats?.fixtures?.wins?.away || 0,
-      awayDraws: stats?.fixtures?.draws?.away || 0,
-      awayLosses: stats?.fixtures?.loses?.away || 0
+      form: stats?.form || "N/A",
+      goalsFor: stats?.goals?.for?.total?.total ?? 0,
+      goalsAgainst: stats?.goals?.against?.total?.total ?? 0,
+      rank: stats?.league?.position ?? "N/A",
+      homeWins: stats?.fixtures?.wins?.home ?? 0,
+      homeDraws: stats?.fixtures?.draws?.home ?? 0,
+      homeLosses: stats?.fixtures?.loses?.home ?? 0,
+      awayWins: stats?.fixtures?.wins?.away ?? 0,
+      awayDraws: stats?.fixtures?.draws?.away ?? 0,
+      awayLosses: stats?.fixtures?.loses?.away ?? 0,
     };
   } catch (error) {
-    console.error(`Error fetching stats for team ${teamId}:`, error);
+    console.error(`Error fetching stats for team ${teamId} (league ${leagueId}, season ${season}):`, error);
     return null;
   }
 }
-
-async function generateAISummary(fixture: any) {
-  console.log(`Generating AI summary for fixture ${fixture.id}: ${fixture.home_team.name} vs ${fixture.away_team.name}`);
-  
+async function generateAISummary(fixture) {
+  console.log(
+    `Generating AI summary for fixture ${fixture.id}: ${fixture.home_team?.name} vs ${fixture.away_team?.name}`,
+  );
+  // Prefer per-row season if your fixtures table includes it; else fallback
+  const season = fixture.season ?? CURRENT_SEASON;
+  // League ID for API-Football stats; use joined league if available, else direct column
+  const leagueId = fixture.league?.id ?? fixture.league_id;
   const [homeStats, awayStats] = await Promise.all([
-    getTeamStats(fixture.home_team_id),
-    getTeamStats(fixture.away_team_id)
+    getTeamStats({
+      teamId: fixture.home_team_id,
+      leagueId,
+      season,
+    }),
+    getTeamStats({
+      teamId: fixture.away_team_id,
+      leagueId,
+      season,
+    }),
   ]);
-  
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
+  // brief spacing to avoid hot-looping requests
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Venue fallback: prefer fixture.venue, else home team venue, else "TBD"
+  const venueName = fixture.venue ?? fixture.home_team?.venue ?? "TBD";
   const systemPrompt = `You are an elite sports analyst specializing in tactical analysis and betting insights for football matches.
 Your role is to provide actionable intelligence that helps users make informed betting decisions.
 
@@ -113,25 +124,37 @@ Key principles:
 - Focus on exploitable matchups and weaknesses
 - Consider recent form, injuries, and tactical trends
 - Provide reasoning for predictions, not just outcomes`;
+  const userPrompt = `Analyze this ${fixture.league?.name ?? "League"} match:
+${fixture.home_team?.name} vs ${fixture.away_team?.name}
+Venue: ${venueName}
+Date: ${new Date(fixture.date).toLocaleDateString("en-GB", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })}
 
-  const userPrompt = `Analyze this Premier League match:
-${fixture.home_team.name} vs ${fixture.away_team.name}
-Venue: ${fixture.venue}
-Date: ${new Date(fixture.date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-
-HOME TEAM (${fixture.home_team.name}):
-${homeStats ? `- Recent Form: ${homeStats.form}
+HOME TEAM (${fixture.home_team?.name}):
+${
+  homeStats
+    ? `- Recent Form: ${homeStats.form}
 - Goals Scored (season): ${homeStats.goalsFor}
 - Goals Conceded (season): ${homeStats.goalsAgainst}
 - League Position: ${homeStats.rank}
-- Home Record: ${homeStats.homeWins}W ${homeStats.homeDraws}D ${homeStats.homeLosses}L` : '- Stats unavailable'}
+- Home Record: ${homeStats.homeWins}W ${homeStats.homeDraws}D ${homeStats.homeLosses}L`
+    : "- Stats unavailable"
+}
 
-AWAY TEAM (${fixture.away_team.name}):
-${awayStats ? `- Recent Form: ${awayStats.form}
+AWAY TEAM (${fixture.away_team?.name}):
+${
+  awayStats
+    ? `- Recent Form: ${awayStats.form}
 - Goals Scored (season): ${awayStats.goalsFor}
 - Goals Conceded (season): ${awayStats.goalsAgainst}
 - League Position: ${awayStats.rank}
-- Away Record: ${awayStats.awayWins}W ${awayStats.awayDraws}D ${awayStats.awayLosses}L` : '- Stats unavailable'}
+- Away Record: ${awayStats.awayWins}W ${awayStats.awayDraws}D ${awayStats.awayLosses}L`
+    : "- Stats unavailable"
+}
 
 Generate a comprehensive match analysis in JSON format with these fields:
 {
@@ -143,6 +166,16 @@ Generate a comprehensive match analysis in JSON format with these fields:
     "h2h_record": { "home_wins": 3, "draws": 1, "away_wins": 1 },
     "home_avg_goals": 1.8,
     "away_avg_goals": 1.2
+    "home_xg_avg": 1.65,                 // expected goals per match
+    "away_xg_avg": 1.10,
+    "home_possession": 55.2,             // % average possession (0–100)
+    "away_possession": 47.8,
+    "home_shots_on_target": 5.4,         // average SOT per match
+    "away_shots_on_target": 4.1,
+    "home_corners_avg": 6.2,             // average corners per match
+    "away_corners_avg": 4.9,
+    "home_goals_against_avg": 1.1,       // average goals conceded per match
+    "away_goals_against_avg": 1.4
   },
   "tactical_analysis": {
     "match_summary": "150-200 words on tactical approach",
@@ -161,11 +194,11 @@ Generate a comprehensive match analysis in JSON format with these fields:
   },
   "lineups_injuries": {
     "home_formation": "4-2-3-1",
-    "home_lineup": ["GK Name", "RB Name", ... 11 players],
+    "home_lineup": ["GK Name", "RB Name", "... 11 players total"],
     "home_injuries": [{"player": "Name", "status": "Out - Injury"}],
     "away_formation": "4-3-3",
-    "away_lineup": [...],
-    "away_injuries": [...]
+    "away_lineup": ["..."],
+    "away_injuries": ["..."]
   },
   "potential_bets": [
     {
@@ -179,126 +212,146 @@ Generate a comprehensive match analysis in JSON format with these fields:
 }
 
 Be specific and actionable. Use current data only.`;
-
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: "gpt-4o",
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content: userPrompt,
+          },
         ],
         temperature: 0.7,
         max_tokens: 4000,
-        response_format: { type: "json_object" }
+        response_format: {
+          type: "json_object",
+        },
       }),
     });
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
+      console.error("OpenAI API error:", response.status, errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
-
     const data = await response.json();
     const aiResponse = JSON.parse(data.choices[0].message.content);
-    
-    const { error: insertError } = await supabase
-      .from('ai_summaries')
-      .insert({
-        fixture_id: fixture.id,
-        quick_summary: aiResponse.quick_summary,
-        advanced_summary: aiResponse.advanced_summary,
-        key_stats: aiResponse.key_stats,
-        tactical_analysis: aiResponse.tactical_analysis,
-        lineups_injuries: aiResponse.lineups_injuries,
-        potential_bets: aiResponse.potential_bets,
-        advanced_insights: aiResponse.advanced_insights || null,
-        confidence: aiResponse.confidence || 0.75,
-        model: 'gpt-4o',
-        fallback_used: false,
-        created_at: new Date().toISOString()
-      });
-    
+    const { error: insertError } = await supabase.from("ai_summaries").insert({
+      fixture_id: fixture.id,
+      quick_summary: aiResponse.quick_summary,
+      advanced_summary: aiResponse.advanced_summary,
+      key_stats: aiResponse.key_stats,
+      tactical_analysis: aiResponse.tactical_analysis,
+      lineups_injuries: aiResponse.lineups_injuries,
+      potential_bets: aiResponse.potential_bets,
+      advanced_insights: aiResponse.advanced_insights || null,
+      confidence: aiResponse.confidence ?? 0.75,
+      model: "gpt-4o",
+      fallback_used: false,
+      created_at: new Date().toISOString(),
+    });
     if (insertError) {
-      console.error('Error inserting AI summary:', insertError);
-      return { success: false, fixtureId: fixture.id, error: insertError.message };
+      console.error("Error inserting AI summary:", insertError);
+      return {
+        success: false,
+        fixtureId: fixture.id,
+        error: insertError.message,
+      };
     }
-    
     console.log(`Successfully generated AI summary for fixture ${fixture.id}`);
-    return { success: true, fixtureId: fixture.id };
-    
+    return {
+      success: true,
+      fixtureId: fixture.id,
+    };
   } catch (error) {
     console.error(`Error generating AI summary for fixture ${fixture.id}:`, error);
-    return { success: false, fixtureId: fixture.id, error: error instanceof Error ? error.message : 'Unknown error' };
+    return {
+      success: false,
+      fixtureId: fixture.id,
+      error: error?.message ?? "Unknown error",
+    };
   }
 }
-
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: corsHeaders,
+    });
   }
-
   try {
-    console.log('=== GENERATE MATCH INSIGHTS CRON JOB STARTED ===');
-    console.log('Timestamp:', new Date().toISOString());
-    
+    console.log("=== GENERATE MATCH INSIGHTS CRON JOB STARTED ===");
+    console.log("Timestamp:", new Date().toISOString());
     const fixtures = await getFixturesForAIGeneration();
     console.log(`Found ${fixtures.length} fixtures needing AI summaries`);
-    
     if (fixtures.length === 0) {
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'No fixtures found requiring AI summaries',
-        timestamp: new Date().toISOString()
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "No fixtures found requiring AI summaries",
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+          status: 200,
+        },
+      );
     }
-    
     const results = [];
     for (const fixture of fixtures) {
       const result = await generateAISummary(fixture);
       results.push(result);
-      
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // polite spacing between summaries
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
-    
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
-    
-    console.log('=== GENERATION COMPLETED ===');
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.length - successCount;
+    console.log("=== GENERATION COMPLETED ===");
     console.log(`Success: ${successCount}, Failures: ${failureCount}`);
-    
-    return new Response(JSON.stringify({
-      success: true,
-      timestamp: new Date().toISOString(),
-      fixtures_processed: fixtures.length,
-      successes: successCount,
-      failures: failureCount,
-      results
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
-    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        timestamp: new Date().toISOString(),
+        fixtures_processed: fixtures.length,
+        successes: successCount,
+        failures: failureCount,
+        results,
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+        status: 200,
+      },
+    );
   } catch (error) {
-    console.error('=== GENERATION FAILED ===');
-    console.error('Error:', error);
-    
-    return new Response(JSON.stringify({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error("=== GENERATION FAILED ===");
+    console.error("Error:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error?.message ?? "Unknown error",
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+        status: 500,
+      },
+    );
   }
 });
