@@ -21,8 +21,8 @@ export function StatsComparison({ keyStats }: StatsComparisonProps) {
   const stats = [
     {
       label: "Avg Goals Scored",
-      home: keyStats.home_goals_avg || 0,
-      away: keyStats.away_goals_avg || 0,
+      home: keyStats.home_avg_goals || 0,
+      away: keyStats.away_avg_goals || 0,
     },
     {
       label: "Avg Expected Goals (xG)",
