@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
@@ -24,6 +25,42 @@ async function callRapidAPI(endpoint) {
     throw new Error(`API-Football error: ${response.status} ${text}`);
   }
   return await response.json();
+}
+/**
+ * Lightweight helper to fetch recent fixtures for a team to compute form/OU trends
+ */
+async function getRecentFixturesForTeam(teamId, leagueId, lastCount = 10) {
+  try {
+    const data = await callRapidAPI(`fixtures?team=${teamId}&league=${leagueId}&last=${lastCount}`);
+    return data.response || [];
+  } catch (e) {
+    console.error("Error fetching recent fixtures for team", teamId, e);
+    return [];
+  }
+}
+/**
+ * Head-to-head last N fixtures between the two teams
+ */
+async function getHeadToHead(homeTeamId, awayTeamId, lastCount = 5) {
+  try {
+    const data = await callRapidAPI(`fixtures/headtohead?h2h=${homeTeamId}-${awayTeamId}&last=${lastCount}`);
+    return data.response || [];
+  } catch (e) {
+    console.error("Error fetching head-to-head fixtures", homeTeamId, awayTeamId, e);
+    return [];
+  }
+}
+/**
+ * Basic per-player stats for a team; used to infer likely scorer/assister and likely carded
+ */
+async function getTeamPlayerStats(teamId, leagueId, season, page = 1) {
+  try {
+    const data = await callRapidAPI(`players?team=${teamId}&league=${leagueId}&season=${season}&page=${page}`);
+    return data.response || [];
+  } catch (e) {
+    console.error("Error fetching player stats for team", teamId, e);
+    return [];
+  }
 }
 /**
  * Pull fixtures scheduled between +24h and +36h, status=NS,
@@ -79,6 +116,9 @@ async function callRapidAPI(endpoint) {
       goalsFor: stats?.goals?.for?.total?.total ?? 0,
       goalsAgainst: stats?.goals?.against?.total?.total ?? 0,
       rank: stats?.league?.position ?? "N/A",
+      avgGoalsFor: stats?.goals?.for?.average?.total ? Number(stats.goals.for.average.total) : undefined,
+      avgGoalsAgainst: stats?.goals?.against?.average?.total ? Number(stats.goals.against.average.total) : undefined,
+      cards: stats?.cards ?? null,
       homeWins: stats?.fixtures?.wins?.home ?? 0,
       homeDraws: stats?.fixtures?.draws?.home ?? 0,
       homeLosses: stats?.fixtures?.loses?.home ?? 0,
@@ -110,6 +150,17 @@ async function generateAISummary(fixture) {
       leagueId,
       season,
     }),
+  ]);
+  // Additional context for betting insights
+  const [homeRecent, awayRecent, h2hRecent] = await Promise.all([
+    getRecentFixturesForTeam(fixture.home_team_id, leagueId, 10),
+    getRecentFixturesForTeam(fixture.away_team_id, leagueId, 10),
+    getHeadToHead(fixture.home_team_id, fixture.away_team_id, 5),
+  ]);
+  // One page of players per team to keep it light (API often paginates ~20 per page)
+  const [homePlayers, awayPlayers] = await Promise.all([
+    getTeamPlayerStats(fixture.home_team_id, leagueId, season, 1),
+    getTeamPlayerStats(fixture.away_team_id, leagueId, season, 1),
   ]);
   // brief spacing to avoid hot-looping requests
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -155,6 +206,15 @@ ${
 - Away Record: ${awayStats.awayWins}W ${awayStats.awayDraws}D ${awayStats.awayLosses}L`
     : "- Stats unavailable"
 }
+
+Recent trends (computed from API data, do not fabricate):
+- Home last 10 fixtures (league): ${homeRecent.length}
+- Away last 10 fixtures (league): ${awayRecent.length}
+- Last 5 H2H fixtures: ${h2hRecent.length}
+
+Players snapshot (first page, may be partial):
+- Home players count: ${homePlayers.length}
+- Away players count: ${awayPlayers.length}
 
 Generate a comprehensive match analysis in JSON format with these fields:
 {
@@ -203,15 +263,35 @@ Generate a comprehensive match analysis in JSON format with these fields:
   "potential_bets": [
     {
       "market": "Match Result",
-      "selection": "Home Win",
-      "reasoning": "Specific tactical/statistical reasoning",
-      "confidence": "high"
+      "selection": "Home Win | Away Win | Draw",
+      "reasoning": "Specific reasoning grounded in recent form, H2H, xG, and defensive metrics",
+      "confidence": "high | medium | low"
+    },
+    {
+      "market": "Most Likely Carded",
+      "selection": "Player Name (Team)",
+      "reasoning": "Backed by player cards per 90, foul rates, and opponent dribbles won",
+      "confidence": "high | medium | low"
+    },
+    {
+      "market": "Most Likely Goal/Assist",
+      "selection": "Player Name (Team)",
+      "reasoning": "Backed by goals+xA per 90, shots on target, involvement share, set-piece duty",
+      "confidence": "high | medium | low"
     }
   ],
   "confidence": 0.85
 }
 
-Be specific and actionable. Use current data only.`;
+Be specific and actionable. Use only the provided data or reasonable inferences from it. Do not invent players or stats.
+
+Additional raw data (for you to use, do not echo directly; summarize):
+HOME_RECENT_FIXTURES_JSON: ${JSON.stringify(homeRecent).slice(0, 5000)}
+AWAY_RECENT_FIXTURES_JSON: ${JSON.stringify(awayRecent).slice(0, 5000)}
+H2H_RECENT_FIXTURES_JSON: ${JSON.stringify(h2hRecent).slice(0, 5000)}
+HOME_PLAYERS_JSON: ${JSON.stringify(homePlayers).slice(0, 5000)}
+AWAY_PLAYERS_JSON: ${JSON.stringify(awayPlayers).slice(0, 5000)}
+`;
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -245,6 +325,8 @@ Be specific and actionable. Use current data only.`;
     }
     const data = await response.json();
     const aiResponse = JSON.parse(data.choices[0].message.content);
+    // Ensure we cap to exactly the three insights if model returns more
+    const potentialBets = Array.isArray(aiResponse.potential_bets) ? aiResponse.potential_bets.slice(0, 3) : [];
     const { error: insertError } = await supabase.from("ai_summaries").insert({
       fixture_id: fixture.id,
       quick_summary: aiResponse.quick_summary,
@@ -252,7 +334,7 @@ Be specific and actionable. Use current data only.`;
       key_stats: aiResponse.key_stats,
       tactical_analysis: aiResponse.tactical_analysis,
       lineups_injuries: aiResponse.lineups_injuries,
-      potential_bets: aiResponse.potential_bets,
+      potential_bets: potentialBets,
       advanced_insights: aiResponse.advanced_insights || null,
       confidence: aiResponse.confidence ?? 0.75,
       model: "gpt-4o",
