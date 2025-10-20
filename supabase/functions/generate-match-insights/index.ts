@@ -51,14 +51,27 @@ async function getHeadToHead(homeTeamId, awayTeamId, lastCount = 5) {
   }
 }
 /**
- * Basic per-player stats for a team; used to infer likely scorer/assister and likely carded
+ * Get team squad (current players) for a team
  */
-async function getTeamPlayerStats(teamId, leagueId, season, page = 1) {
+async function getTeamSquad(teamId) {
   try {
-    const data = await callRapidAPI(`players?team=${teamId}&league=${leagueId}&season=${season}&page=${page}`);
+    const data = await callRapidAPI(`players/squads?team=${teamId}`);
     return data.response || [];
   } catch (e) {
-    console.error("Error fetching player stats for team", teamId, e);
+    console.error("Error fetching team squad for team", teamId, e);
+    return [];
+  }
+}
+
+/**
+ * Get detailed statistics for specific players (goals, assists, cards, etc.)
+ */
+async function getPlayerDetailedStats(playerId, leagueId, season) {
+  try {
+    const data = await callRapidAPI(`players/statistics?player=${playerId}&league=${leagueId}&season=${season}`);
+    return data.response || [];
+  } catch (e) {
+    console.error("Error fetching detailed player stats for player", playerId, e);
     return [];
   }
 }
@@ -157,10 +170,19 @@ async function generateAISummary(fixture) {
     getRecentFixturesForTeam(fixture.away_team_id, leagueId, 10),
     getHeadToHead(fixture.home_team_id, fixture.away_team_id, 5),
   ]);
-  // One page of players per team to keep it light (API often paginates ~20 per page)
-  const [homePlayers, awayPlayers] = await Promise.all([
-    getTeamPlayerStats(fixture.home_team_id, leagueId, season, 1),
-    getTeamPlayerStats(fixture.away_team_id, leagueId, season, 1),
+  // Get current squad for both teams
+  const [homeSquad, awaySquad] = await Promise.all([
+    getTeamSquad(fixture.home_team_id),
+    getTeamSquad(fixture.away_team_id),
+  ]);
+
+  // Get detailed stats for top 5 players from each team (to avoid too many API calls)
+  const topHomePlayers = homeSquad.slice(0, 5);
+  const topAwayPlayers = awaySquad.slice(0, 5);
+
+  const [homePlayerDetails, awayPlayerDetails] = await Promise.all([
+    Promise.all(topHomePlayers.map((player) => getPlayerDetailedStats(player.id, leagueId, season))),
+    Promise.all(topAwayPlayers.map((player) => getPlayerDetailedStats(player.id, leagueId, season))),
   ]);
   // brief spacing to avoid hot-looping requests
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -212,9 +234,13 @@ Recent trends (computed from API data, do not fabricate):
 - Away last 10 fixtures (league): ${awayRecent.length}
 - Last 5 H2H fixtures: ${h2hRecent.length}
 
-Players snapshot (first page, may be partial):
-- Home players count: ${homePlayers.length}
-- Away players count: ${awayPlayers.length}
+Current squad data:
+- Home squad count: ${homeSquad.length}
+- Away squad count: ${awaySquad.length}
+
+Top 5 players with detailed stats:
+- Home team detailed stats: ${homePlayerDetails.length} players
+- Away team detailed stats: ${awayPlayerDetails.length} players
 
 Generate a comprehensive match analysis in JSON format with these fields:
 {
@@ -289,8 +315,10 @@ Additional raw data (for you to use, do not echo directly; summarize):
 HOME_RECENT_FIXTURES_JSON: ${JSON.stringify(homeRecent).slice(0, 5000)}
 AWAY_RECENT_FIXTURES_JSON: ${JSON.stringify(awayRecent).slice(0, 5000)}
 H2H_RECENT_FIXTURES_JSON: ${JSON.stringify(h2hRecent).slice(0, 5000)}
-HOME_PLAYERS_JSON: ${JSON.stringify(homePlayers).slice(0, 5000)}
-AWAY_PLAYERS_JSON: ${JSON.stringify(awayPlayers).slice(0, 5000)}
+HOME_SQUAD_JSON: ${JSON.stringify(homeSquad).slice(0, 5000)}
+AWAY_SQUAD_JSON: ${JSON.stringify(awaySquad).slice(0, 5000)}
+HOME_PLAYER_DETAILS_JSON: ${JSON.stringify(homePlayerDetails).slice(0, 5000)}
+AWAY_PLAYER_DETAILS_JSON: ${JSON.stringify(awayPlayerDetails).slice(0, 5000)}
 `;
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
