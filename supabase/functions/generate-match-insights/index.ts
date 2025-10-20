@@ -28,8 +28,7 @@ async function callRapidAPI(endpoint) {
 }
 /**
  * Lightweight helper to fetch recent fixtures for a team to compute form/OU trends
- */
-async function getRecentFixturesForTeam(teamId, leagueId, lastCount = 10) {
+ */ async function getRecentFixturesForTeam(teamId, leagueId, lastCount = 10) {
   try {
     const data = await callRapidAPI(`fixtures?team=${teamId}&league=${leagueId}&last=${lastCount}`);
     return data.response || [];
@@ -40,8 +39,7 @@ async function getRecentFixturesForTeam(teamId, leagueId, lastCount = 10) {
 }
 /**
  * Head-to-head last N fixtures between the two teams
- */
-async function getHeadToHead(homeTeamId, awayTeamId, lastCount = 5) {
+ */ async function getHeadToHead(homeTeamId, awayTeamId, lastCount = 5) {
   try {
     const data = await callRapidAPI(`fixtures/headtohead?h2h=${homeTeamId}-${awayTeamId}&last=${lastCount}`);
     return data.response || [];
@@ -52,8 +50,7 @@ async function getHeadToHead(homeTeamId, awayTeamId, lastCount = 5) {
 }
 /**
  * Get team squad (current players) for a team
- */
-async function getTeamSquad(teamId) {
+ */ async function getTeamSquad(teamId) {
   try {
     const data = await callRapidAPI(`players/squads?team=${teamId}`);
     return data.response || [];
@@ -62,11 +59,9 @@ async function getTeamSquad(teamId) {
     return [];
   }
 }
-
 /**
  * Get detailed statistics for specific players (goals, assists, cards, etc.)
- */
-async function getPlayerDetailedStats(playerId, leagueId, season) {
+ */ async function getPlayerDetailedStats(playerId, leagueId, season) {
   try {
     const data = await callRapidAPI(`players/statistics?player=${playerId}&league=${leagueId}&season=${season}`);
     return data.response || [];
@@ -175,11 +170,9 @@ async function generateAISummary(fixture) {
     getTeamSquad(fixture.home_team_id),
     getTeamSquad(fixture.away_team_id),
   ]);
-
   // Get detailed stats for top 5 players from each team (to avoid too many API calls)
   const topHomePlayers = homeSquad.slice(0, 5);
   const topAwayPlayers = awaySquad.slice(0, 5);
-
   const [homePlayerDetails, awayPlayerDetails] = await Promise.all([
     Promise.all(topHomePlayers.map((player) => getPlayerDetailedStats(player.id, leagueId, season))),
     Promise.all(topAwayPlayers.map((player) => getPlayerDetailedStats(player.id, leagueId, season))),
@@ -243,24 +236,25 @@ Top 5 players with detailed stats:
 - Away team detailed stats: ${awayPlayerDetails.length} players
 
 Generate a comprehensive match analysis in JSON format with these fields:
+(below is just example Json, so you should replace proper value instead of example.)
 {
-  "quick_summary": "2-3 paragraphs: match context, key tactical battle, predicted outcome with reasoning",
-  "advanced_summary": "4-5 paragraphs: detailed tactical analysis, formation breakdown, key player matchups, set piece threat, defensive vulnerabilities",
+  "quick_summary": "1~2 sentences: match context, key tactical battle, predicted outcome with reasoning",
+  "advanced_summary": "3~4 sentences: detailed tactical analysis, formation breakdown, key player matchups, set piece threat, defensive vulnerabilities",
   "key_stats": {
     "home_form": ["W", "L", "D", "W", "W"],
     "away_form": ["L", "W", "D", "L", "W"],
     "h2h_record": { "home_wins": 3, "draws": 1, "away_wins": 1 },
     "home_avg_goals": 1.8,
     "away_avg_goals": 1.2
-    "home_xg_avg": 1.65,                 // expected goals per match
+    "home_xg_avg": 1.65,                 
     "away_xg_avg": 1.10,
-    "home_possession": 55.2,             // % average possession (0–100)
+    "home_possession": 55.2,             
     "away_possession": 47.8,
-    "home_shots_on_target": 5.4,         // average SOT per match
+    "home_shots_on_target": 5.4,        
     "away_shots_on_target": 4.1,
-    "home_corners_avg": 6.2,             // average corners per match
+    "home_corners_avg": 6.2,             
     "away_corners_avg": 4.9,
-    "home_goals_against_avg": 1.1,       // average goals conceded per match
+    "home_goals_against_avg": 1.1,       
     "away_goals_against_avg": 1.4
   },
   "tactical_analysis": {
