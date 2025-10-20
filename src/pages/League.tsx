@@ -274,6 +274,8 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
   }, [leagueId, user]);
 
   const fetchFixtures = async () => {
+    const from = new Date(Date.now()).toISOString();
+    const to = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     try {
       // Fetch upcoming fixtures (NS = Not Started) for this league
       const { data: fixturesData, error: fixturesError } = await supabase
@@ -281,12 +283,12 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
         .select("*, goals")
         .eq("league_id", leagueId)
         .eq("status", "NS")
+        .gte("date", from)
+        .lte("date", to)
         // .gte("date", new Date().toISOString())
-        .order("date", { ascending: true })
-        .limit(4);
+        .order("date", { ascending: true });
 
       if (fixturesError) throw fixturesError;
-      console.log("FixturesData", fixturesData);
 
       // Fetch all teams
       const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
