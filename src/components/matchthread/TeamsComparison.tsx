@@ -40,7 +40,7 @@ export function TeamsComparison({ homeTeam, awayTeam, keyStats }: TeamsCompariso
     keyStats?.h2h_record ? (
       <div className="text-center">
         <p className="text-xs text-muted-foreground mb-2">Head to Head</p>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex justify-center gap-3 text-sm">
           <div className="text-center">
             <div className="font-bold text-green-400">{keyStats.h2h_record.home_wins}</div>
             <div className="text-xs text-muted-foreground">Wins</div>
