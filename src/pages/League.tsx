@@ -34,6 +34,24 @@ interface Team {
   logo: string;
 }
 
+type StandingRow = {
+  id: number;
+  league_id: number;
+  season: number;
+  team_id: number;
+  rank: number;
+  points: number;
+  played: number;
+  win: number;
+  draw: number;
+  lose: number;
+  goals_for: number;
+  goals_against: number;
+  goal_diff: number;
+  form: string | null; // e.g. "WWWDW"
+  updated_at: string;
+};
+
 const League = () => {
   const { slug } = useParams();
   const [activeTab, setActiveTab] = useState<TabType>("fixtures");
@@ -826,32 +844,36 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
 
 // Form Tab Component
 const FormTab = ({ leagueId }: { leagueId: number }) => {
-  const [fixtures, setFixtures] = useState<any[]>([]);
   const [teams, setTeams] = useState<Map<number, Team>>(new Map());
+  const [standings, setStandings] = useState<StandingRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchRealData();
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId]);
 
-  const fetchRealData = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const { data: fixturesData, error: fixturesError } = await supabase
-        .from("fixtures")
-        .select("*, goals")
-        .eq("league_id", leagueId)
-        .order("date", { ascending: false })
-        .limit(120);
-      if (fixturesError) throw fixturesError;
-
+      // 1) Teams map (for names/logos)
       const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
       if (teamsError) throw teamsError;
 
       const map = new Map<number, Team>();
-      teamsData?.forEach((t) => map.set(t.id, t));
+      teamsData?.forEach((t: Team) => map.set(t.id, t));
       setTeams(map);
-      setFixtures(fixturesData || []);
+
+      // 2) Standings (top 10 by rank for this league)
+      const { data: standingsData, error: standingsError } = await supabase
+        .from("standings")
+        .select("*")
+        .eq("league_id", leagueId)
+        .order("rank", { ascending: true })
+        .limit(10);
+      if (standingsError) throw standingsError;
+
+      setStandings(standingsData || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -859,76 +881,30 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
     }
   };
 
-  const calculateTeamStats = () => {
-    const teamStats = new Map<number, any>();
-    fixtures.forEach((fx) => {
-      if (!fx.goals) return;
-      const h = fx.home_team_id,
-        a = fx.away_team_id,
-        hg = fx.goals.home,
-        ag = fx.goals.away;
-
-      if (!teamStats.has(h))
-        teamStats.set(h, { id: h, matches: [], wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 });
-      if (!teamStats.has(a))
-        teamStats.set(a, { id: a, matches: [], wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, points: 0 });
-
-      const hs = teamStats.get(h),
-        as = teamStats.get(a);
-      hs.goalsFor += hg;
-      hs.goalsAgainst += ag;
-      as.goalsFor += ag;
-      as.goalsAgainst += hg;
-
-      if (hg > ag) {
-        hs.wins++;
-        hs.points += 3;
-        as.losses++;
-      } else if (hg < ag) {
-        as.wins++;
-        as.points += 3;
-        hs.losses++;
-      } else {
-        hs.draws++;
-        as.draws++;
-        hs.points++;
-        as.points++;
-      }
-
-      hs.matches.unshift({
-        date: fx.date,
-        opponent: teams.get(a)?.name || "Unknown",
-        home: true,
-        score: `${hg}-${ag}`,
-        result: hg > ag ? "W" : hg < ag ? "L" : "D",
-      });
-      as.matches.unshift({
-        date: fx.date,
-        opponent: teams.get(h)?.name || "Unknown",
-        home: false,
-        score: `${ag}-${hg}`,
-        result: ag > hg ? "W" : ag < hg ? "L" : "D",
-      });
-    });
-
-    return Array.from(teamStats.values())
-      .map((s) => ({
-        ...s,
-        matches: s.matches.slice(0, 5),
-        goalDiff: s.goalsFor - s.goalsAgainst,
-        form: s.matches.slice(0, 5).map((m: any) => m.result),
-      }))
-      .sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor)
-      .slice(0, 10);
-  };
+  // Normalize for UI: convert a StandingRow to the shape your UI expects
+  const topTeams = standings.map((s) => ({
+    id: s.team_id,
+    rank: s.rank,
+    points: s.points,
+    goalsFor: s.goals_for,
+    goalsAgainst: s.goals_against,
+    goalDiff: s.goal_diff,
+    // Form string like "WWWDW" -> last 5 chars -> array ['W','W','W','D','W']
+    form: (s.form || "")
+      .slice(-5)
+      .split("")
+      .map((c) => (c === "W" || c === "D" || c === "L" ? c : ""))
+      .filter(Boolean),
+    // No per-match details when using standings only
+    matches: [] as any[],
+  }));
 
   if (loading) return <Skeleton className="h-96 w-full" />;
 
-  const topTeams = calculateTeamStats();
   if (!topTeams.length) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No fixture data available for this league yet.</p>
+        <p className="text-muted-foreground">No standings available for this league yet.</p>
       </div>
     );
   }
@@ -953,11 +929,15 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
               <div className="flex items-start justify-between gap-3 sm:gap-6 mb-4 sm:mb-6">
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                   <div className="grid place-items-center w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-sm sm:text-xl font-bold shrink-0">
-                    {idx + 1}
+                    {team.rank ?? idx + 1}
                   </div>
                   {t?.logo && (
                     <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl bg-background/50 p-1.5 sm:p-2 grid place-items-center shrink-0">
-                      <img src={t.logo} alt={t.name} className="h-full w-full object-contain max-w-full" />
+                      <img
+                        src={t.logo || ""}
+                        alt={t?.name || "Team"}
+                        className="h-full w-full object-contain max-w-full"
+                      />
                     </div>
                   )}
                   <div className="min-w-0">
@@ -1007,36 +987,14 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                 </div>
               </div>
 
-              {/* Last 5 matches — internal scroll only */}
-              <div className="overflow-x-auto no-scrollbar pb-1 sm:pb-0">
-                <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
-                  {team.matches.map((m: any, i: number) => {
-                    const win = m.result === "W";
-                    const draw = m.result === "D";
-                    return (
-                      <div
-                        key={i}
-                        className={`relative shrink-0 w-[46%] xs:w-[42%] sm:w-auto snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
-                          ${
-                            win
-                              ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
-                              : draw
-                                ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
-                                : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
-                          }`}
-                      >
-                        <div className="text-[10px] text-muted-foreground mb-1 font-medium">
-                          {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        </div>
-                        <div className="text-[11px] sm:text-xs mb-1.5 sm:mb-2 line-clamp-2 h-7 sm:h-8">
-                          <span className="text-muted-foreground">{m.home ? "vs" : "@"}</span> {m.opponent}
-                        </div>
-                        <div className="text-sm sm:text-base font-bold">{m.score}</div>
-                      </div>
-                    );
-                  })}
+              {/* Last 5 matches — hidden when using standings only (no per-match details) */}
+              {false && (
+                <div className="overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+                  <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
+                    {/* requires fixtures to populate opponent/date/score */}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
@@ -1051,10 +1009,10 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
           </div>
 
           <div className="space-y-1">
-            {topTeams.slice(0, 10).map((t, idx) => {
+            {topTeams.map((t, idx) => {
               const td = teams.get(t.id);
-              const top4 = idx < 4;
-              const rel = idx >= topTeams.length - 3;
+              const top4 = (t.rank ?? idx + 1) <= 4;
+              const rel = (t.rank ?? idx + 1) >= Math.min(10, topTeams.length) - 2; // bottom 3 of shown list
 
               return (
                 <div
@@ -1065,11 +1023,11 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                     className={`h-6 w-6 rounded text-[11px] font-bold grid place-items-center
                       ${top4 ? "bg-primary/20 text-primary" : rel ? "bg-red-500/20 text-red-400" : "bg-muted text-muted-foreground"}`}
                   >
-                    {idx + 1}
+                    {t.rank ?? idx + 1}
                   </div>
                   {td?.logo && (
                     <div className="h-6 w-6 rounded bg-background/50 p-0.5 grid place-items-center shrink-0">
-                      <img src={td.logo} alt={td.name} className="h-full w-full object-contain" />
+                      <img src={td.logo || ""} alt={td?.name || "Team"} className="h-full w-full object-contain" />
                     </div>
                   )}
                   <span className="flex-1 text-sm font-medium truncate min-w-0">{td?.name || "Unknown"}</span>
