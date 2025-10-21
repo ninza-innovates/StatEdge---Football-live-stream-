@@ -1135,7 +1135,11 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
             })}
           </div>
 
-          <Button variant="link" className="w-full mt-3 sm:mt-4 text-primary group">
+          <Button
+            variant="link"
+            className="w-full mt-3 sm:mt-4 text-primary group"
+            onClick={() => setActiveTab("table")}
+          >
             View Full Table
             <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
           </Button>
