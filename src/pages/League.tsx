@@ -48,9 +48,22 @@ type StandingRow = {
   goals_for: number;
   goals_against: number;
   goal_diff: number;
-  form: string | null; // e.g. "WWWDW"
+  form: string | null;
   updated_at: string;
 };
+
+type FixtureRow = {
+  id: number;
+  league_id: number;
+  date: string; // timestamptz
+  home_team_id: number;
+  away_team_id: number;
+  status: string;
+  goals: { home?: number; away?: number } | null;
+};
+
+const FINISHED_STATUSES = ["FT", "AET", "PEN"]; // adjust if your data differs
+const MATCHES_PER_TEAM = 5; // change to 3 if you want exactly 3
 
 const League = () => {
   const { slug } = useParams();
@@ -844,36 +857,51 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
 
 // Form Tab Component
 const FormTab = ({ leagueId }: { leagueId: number }) => {
-  const [teams, setTeams] = useState<Map<number, Team>>(new Map());
+  const [teamsMap, setTeamsMap] = useState<Map<number, Team>>(new Map());
   const [standings, setStandings] = useState<StandingRow[]>([]);
+  const [fixtures, setFixtures] = useState<FixtureRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
+    fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId]);
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     setLoading(true);
     try {
-      // 1) Teams map (for names/logos)
+      // 1) Teams (for name/logo)
       const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
       if (teamsError) throw teamsError;
+      const tmap = new Map<number, Team>();
+      (teamsData || []).forEach((t: Team) => tmap.set(t.id, t));
+      setTeamsMap(tmap);
 
-      const map = new Map<number, Team>();
-      teamsData?.forEach((t: Team) => map.set(t.id, t));
-      setTeams(map);
-
-      // 2) Standings (top 10 by rank for this league)
+      // 2) Standings (ALL teams in this league, ordered by rank)
       const { data: standingsData, error: standingsError } = await supabase
         .from("standings")
         .select("*")
         .eq("league_id", leagueId)
-        .order("rank", { ascending: true })
-        .limit(10);
+        .order("rank", { ascending: true });
       if (standingsError) throw standingsError;
+      const srows = standingsData || [];
+      setStandings(srows);
 
-      setStandings(standingsData || []);
+      // 3) Fixtures: get a big enough slice & group per team in JS
+      //    Heuristic: pull last (MATCHES_PER_TEAM * teamCount * 2) fixtures to be safe.
+      const teamCount = srows.length || 20;
+      const fetchLimit = Math.max(MATCHES_PER_TEAM * teamCount * 2, 200);
+
+      const { data: fixturesData, error: fixturesError } = await supabase
+        .from("fixtures")
+        .select("id, league_id, date, home_team_id, away_team_id, status, goals")
+        .eq("league_id", leagueId)
+        .in("status", FINISHED_STATUSES) // only finished games
+        .order("date", { ascending: false })
+        .limit(fetchLimit);
+      if (fixturesError) throw fixturesError;
+
+      setFixtures(fixturesData || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -881,126 +909,198 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
     }
   };
 
-  // Normalize for UI: convert a StandingRow to the shape your UI expects
-  const topTeams = standings.map((s) => ({
-    id: s.team_id,
-    rank: s.rank,
-    points: s.points,
-    goalsFor: s.goals_for,
-    goalsAgainst: s.goals_against,
-    goalDiff: s.goal_diff,
-    // Form string like "WWWDW" -> last 5 chars -> array ['W','W','W','D','W']
-    form: (s.form || "")
-      .slice(-5)
-      .split("")
-      .map((c) => (c === "W" || c === "D" || c === "L" ? c : ""))
-      .filter(Boolean),
-    // No per-match details when using standings only
-    matches: [] as any[],
-  }));
+  // Build view-model per team: rank/points/GF/GA/GD/form from standings + last N fixtures from fixtures
+  const teamsWithRecentMatches = useMemo(() => {
+    if (!standings.length) return [];
+
+    // Pre-index fixtures by team quickly
+    const perTeam: Record<number, any[]> = {};
+    const pushMatch = (teamId: number, m: any) => {
+      if (!perTeam[teamId]) perTeam[teamId] = [];
+      if (perTeam[teamId].length < MATCHES_PER_TEAM) perTeam[teamId].push(m);
+    };
+
+    // For each fixture (newest-first), push a match card for BOTH teams
+    for (const fx of fixtures) {
+      if (!fx.goals || typeof fx.goals.home !== "number" || typeof fx.goals.away !== "number") continue;
+
+      const h = fx.home_team_id;
+      const a = fx.away_team_id;
+      const hg = fx.goals.home!;
+      const ag = fx.goals.away!;
+      const homeRes = hg > ag ? "W" : hg < ag ? "L" : "D";
+      const awayRes = ag > hg ? "W" : ag < hg ? "L" : "D";
+
+      // home team card
+      pushMatch(h, {
+        date: fx.date,
+        opponentId: a,
+        opponent: teamsMap.get(a)?.name || "Unknown",
+        home: true,
+        score: `${hg}-${ag}`,
+        result: homeRes,
+      });
+
+      // away team card
+      pushMatch(a, {
+        date: fx.date,
+        opponentId: h,
+        opponent: teamsMap.get(h)?.name || "Unknown",
+        home: false,
+        score: `${ag}-${hg}`,
+        result: awayRes,
+      });
+
+      // Early stop if all teams have enough matches (optional micro-opt)
+      // if (Object.keys(perTeam).length >= standings.length && Object.values(perTeam).every(v => v.length >= MATCHES_PER_TEAM)) break;
+    }
+
+    // Merge with standings, keep table order by rank
+    return standings.map((s) => {
+      const team = teamsMap.get(s.team_id);
+      // derive form from standings.form if present (fallback to last matches)
+      const formFromStandings =
+        (s.form || "")
+          .slice(-5)
+          .split("")
+          .filter((c) => c === "W" || c === "D" || c === "L") || [];
+
+      const matches = perTeam[s.team_id] || [];
+      const formFromFixtures = matches.map((m) => m.result).slice(0, 5);
+
+      return {
+        id: s.team_id,
+        rank: s.rank,
+        name: team?.name || "Unknown Team",
+        logo: team?.logo || null,
+        points: s.points,
+        goalsFor: s.goals_for,
+        goalsAgainst: s.goals_against,
+        goalDiff: s.goal_diff,
+        // prefer form from standings; if missing, use fixtures-derived
+        form: formFromStandings.length ? formFromStandings : formFromFixtures,
+        matches, // already capped at MATCHES_PER_TEAM per team
+      };
+    });
+  }, [standings, fixtures, teamsMap]);
 
   if (loading) return <Skeleton className="h-96 w-full" />;
 
-  if (!topTeams.length) {
+  if (!teamsWithRecentMatches.length) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No standings available for this league yet.</p>
+        <p className="text-muted-foreground">No standings/fixtures available for this league yet.</p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-full overflow-x-hidden">
-      {/* Left: Team Form */}
+      {/* Left: ALL teams with recent matches */}
       <div className="lg:col-span-2 space-y-4">
         <div className="flex items-center gap-2 mb-2 sm:mb-4">
           <div className="h-6 w-1 sm:h-8 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
-          <h2 className="text-xl sm:text-2xl font-bold">Team Form Analysis</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Team Form & Recent Matches</h2>
         </div>
 
-        {topTeams.slice(0, 5).map((team, idx) => {
-          const t = teams.get(team.id);
-          return (
-            <div
-              key={team.id}
-              className="group border rounded-xl p-3 sm:p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3 sm:gap-6 mb-4 sm:mb-6">
-                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                  <div className="grid place-items-center w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-sm sm:text-xl font-bold shrink-0">
-                    {team.rank ?? idx + 1}
-                  </div>
-                  {t?.logo && (
-                    <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl bg-background/50 p-1.5 sm:p-2 grid place-items-center shrink-0">
-                      <img
-                        src={t.logo || ""}
-                        alt={t?.name || "Team"}
-                        className="h-full w-full object-contain max-w-full"
-                      />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg font-bold truncate">{t?.name || "Unknown Team"}</h3>
-                    <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
-                      {team.form.map((r: string, i: number) => (
-                        <div
-                          key={i}
-                          className={`h-5 w-5 sm:h-6 sm:w-6 rounded text-[10px] sm:text-[11px] font-bold grid place-items-center
-                            ${
-                              r === "W"
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : r === "D"
-                                  ? "bg-amber-500/20 text-amber-400"
-                                  : "bg-red-500/20 text-red-400"
-                            }`}
-                        >
-                          {r}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+        {teamsWithRecentMatches.map((team, idx) => (
+          <div
+            key={team.id}
+            className="group border rounded-xl p-3 sm:p-6 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300"
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 sm:gap-6 mb-4 sm:mb-6">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="grid place-items-center w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-sm sm:text-xl font-bold shrink-0">
+                  {team.rank ?? idx + 1}
                 </div>
-
-                <div className="flex gap-4 sm:gap-6 text-right shrink-0">
-                  <div>
-                    <div className="text-lg sm:text-2xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
-                      {team.points}
-                    </div>
-                    <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">Points</div>
+                {!!team.logo && (
+                  <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl bg-background/50 p-1.5 sm:p-2 grid place-items-center shrink-0">
+                    <img src={team.logo} alt={team.name} className="h-full w-full object-contain max-w-full" />
                   </div>
-                  <div>
-                    <div className="text-sm sm:text-lg font-semibold">
-                      {team.goalsFor}:{team.goalsAgainst}
-                    </div>
-                    <div className="text-[11px] sm:text-xs text-muted-foreground">GF:GA</div>
-                  </div>
-                  <div>
-                    <div
-                      className={`text-sm sm:text-lg font-semibold ${team.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}
-                    >
-                      {team.goalDiff >= 0 ? "+" : ""}
-                      {team.goalDiff}
-                    </div>
-                    <div className="text-[11px] sm:text-xs text-muted-foreground">GD</div>
+                )}
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold truncate">{team.name}</h3>
+                  <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
+                    {team.form.slice(-5).map((r: string, i: number) => (
+                      <div
+                        key={i}
+                        className={`h-5 w-5 sm:h-6 sm:w-6 rounded text-[10px] sm:text-[11px] font-bold grid place-items-center
+                          ${
+                            r === "W"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : r === "D"
+                                ? "bg-amber-500/20 text-amber-400"
+                                : "bg-red-500/20 text-red-400"
+                          }`}
+                      >
+                        {r}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Last 5 matches — hidden when using standings only (no per-match details) */}
-              {false && (
-                <div className="overflow-x-auto no-scrollbar pb-1 sm:pb-0">
-                  <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
-                    {/* requires fixtures to populate opponent/date/score */}
+              <div className="flex gap-4 sm:gap-6 text-right shrink-0">
+                <div>
+                  <div className="text-lg sm:text-2xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent">
+                    {team.points}
                   </div>
+                  <div className="text-[11px] sm:text-xs text-muted-foreground font-medium">Points</div>
                 </div>
-              )}
+                <div>
+                  <div className="text-sm sm:text-lg font-semibold">
+                    {team.goalsFor}:{team.goalsAgainst}
+                  </div>
+                  <div className="text-[11px] sm:text-xs text-muted-foreground">GF:GA</div>
+                </div>
+                <div>
+                  <div
+                    className={`text-sm sm:text-lg font-semibold ${team.goalDiff >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                  >
+                    {team.goalDiff >= 0 ? "+" : ""}
+                    {team.goalDiff}
+                  </div>
+                  <div className="text-[11px] sm:text-xs text-muted-foreground">GD</div>
+                </div>
+              </div>
             </div>
-          );
-        })}
+
+            {/* Recent matches (3–5) */}
+            <div className="overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+              <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
+                {team.matches.map((m: any, i: number) => {
+                  const win = m.result === "W";
+                  const draw = m.result === "D";
+                  return (
+                    <div
+                      key={i}
+                      className={`relative shrink-0 w-[46%] xs:w-[42%] sm:w-auto snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
+                        ${
+                          win
+                            ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
+                            : draw
+                              ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                              : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
+                        }`}
+                    >
+                      <div className="text-[10px] text-muted-foreground mb-1 font-medium">
+                        {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </div>
+                      <div className="text-[11px] sm:text-xs mb-1.5 sm:mb-2 line-clamp-2 h-7 sm:h-8">
+                        <span className="text-muted-foreground">{m.home ? "vs" : "@"}</span> {m.opponent}
+                      </div>
+                      <div className="text-sm sm:text-base font-bold">{m.score}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Right: mini table (full width on mobile) */}
+      {/* Right: FULL league table from standings */}
       <div className="space-y-4">
         <div className="border rounded-xl p-4 sm:p-6 bg-gradient-to-br from-card to-card/50 lg:sticky lg:top-6">
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
@@ -1009,28 +1109,26 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
           </div>
 
           <div className="space-y-1">
-            {topTeams.map((t, idx) => {
-              const td = teams.get(t.id);
-              const top4 = (t.rank ?? idx + 1) <= 4;
-              const rel = (t.rank ?? idx + 1) >= Math.min(10, topTeams.length) - 2; // bottom 3 of shown list
-
+            {teamsWithRecentMatches.map((t) => {
+              const top4 = t.rank <= 4;
+              const rel = t.rank >= Math.max(teamsWithRecentMatches.length - 2, teamsWithRecentMatches.length - 2); // bottom 3 in full list if you want: t.rank >= (len-2)
               return (
                 <div
                   key={t.id}
-                  className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all hover:bg-accent/50`}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all hover:bg-accent/50"
                 >
                   <div
                     className={`h-6 w-6 rounded text-[11px] font-bold grid place-items-center
                       ${top4 ? "bg-primary/20 text-primary" : rel ? "bg-red-500/20 text-red-400" : "bg-muted text-muted-foreground"}`}
                   >
-                    {t.rank ?? idx + 1}
+                    {t.rank}
                   </div>
-                  {td?.logo && (
+                  {!!t.logo && (
                     <div className="h-6 w-6 rounded bg-background/50 p-0.5 grid place-items-center shrink-0">
-                      <img src={td.logo || ""} alt={td?.name || "Team"} className="h-full w-full object-contain" />
+                      <img src={t.logo} alt={t.name} className="h-full w-full object-contain" />
                     </div>
                   )}
-                  <span className="flex-1 text-sm font-medium truncate min-w-0">{td?.name || "Unknown"}</span>
+                  <span className="flex-1 text-sm font-medium truncate min-w-0">{t.name}</span>
                   <span className="text-sm font-bold shrink-0">{t.points}</span>
                 </div>
               );
