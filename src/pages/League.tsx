@@ -1066,39 +1066,54 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
               </div>
             </div>
 
-            {/* Recent matches (3–5) */}
-            <div className="overflow-x-auto no-scrollbar pb-1 sm:pb-0">
-              <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
-                {team.matches.map((m: any, i: number) => {
-                  const win = m.result === "W";
-                  const draw = m.result === "D";
-                  return (
-                    <div
-                      key={i}
-                      className={`relative shrink-0 w-[46%] xs:w-[42%] sm:w-auto snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
-                        ${
-                          win
-                            ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
-                            : draw
-                              ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
-                              : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
-                        }`}
-                    >
-                      <div className="text-[10px] text-muted-foreground mb-1 font-medium">
-                        {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </div>
-                      <div className="text-[11px] sm:text-xs mb-1.5 sm:mb-2 line-clamp-2 h-7 sm:h-8">
-                        <span className="text-muted-foreground">{m.home ? "vs" : "@"}</span> {m.opponent}
-                      </div>
-                      <div className="text-sm sm:text-base font-bold">{m.score}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Recent matches (3–5) — MOBILE SWIPE SCROLL */}
+<div className="relative -mx-3 sm:mx-0">
+  <div
+    className="
+      flex gap-2
+      sm:grid sm:grid-cols-5 sm:gap-3
+      px-3 sm:px-0
+      overflow-x-auto
+      snap-x snap-mandatory
+      no-scrollbar
+      touch-pan-x
+      overscroll-x-contain
+      [scrollbar-gutter:stable]
+      [-webkit-overflow-scrolling:touch]
+      [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]
+    "
+  >
+    {team.matches.map((m: any, i: number) => {
+      const win = m.result === "W";
+      const draw = m.result === "D";
+      return (
+        <div
+          key={i}
+          className={`
+            relative shrink-0
+            w-[70%] xs:w-[56%] sm:w-auto      /* <— wider on tiny screens for comfy swipe */
+            snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
+            ${
+              win
+                ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
+                : draw
+                ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
+            }
+          `}
+        >
+          <div className="text-[10px] text-muted-foreground mb-1 font-medium">
+            {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </div>
-        ))}
-      </div>
+          <div className="text-[11px] sm:text-xs mb-1.5 sm:mb-2 line-clamp-2 h-7 sm:h-8">
+            <span className="text-muted-foreground">{m.home ? "vs" : "@"}</span> {m.opponent}
+          </div>
+          <div className="text-sm sm:text-base font-bold">{m.score}</div>
+        </div>
+      );
+    })}
+  </div>
+</div>
 
       {/* Right: FULL league table from standings */}
       <div className="space-y-4">
