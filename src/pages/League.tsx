@@ -856,7 +856,7 @@ const TableTab = ({ leagueId }: { leagueId: number }) => {
 };
 
 // Form Tab Component
-const FormTab = ({ leagueId }: { leagueId: number }) => {
+const FormTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTab: (tab: TabType) => void }) => {
   const [teamsMap, setTeamsMap] = useState<Map<number, Team>>(new Map());
   const [standings, setStandings] = useState<StandingRow[]>([]);
   const [fixtures, setFixtures] = useState<FixtureRow[]>([]);
