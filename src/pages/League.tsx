@@ -1113,7 +1113,6 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
       );
     })}
   </div>
-</div>
 
       {/* Right: FULL league table from standings */}
       <div className="space-y-4">
