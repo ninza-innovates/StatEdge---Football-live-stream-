@@ -65,15 +65,24 @@ export function AppSidebar() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50 bg-background/95 backdrop-blur-xl">
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-border/50 bg-background/95 backdrop-blur-xl"
+    >
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center gap-3">
-          <img src="/favicon.png" alt="StatEdge.ai Logo" className="h-8 w-8 flex-shrink-0 rounded-lg" />
+          <img
+            src="/favicon.png"
+            alt="StatEdge.ai Logo"
+            className="h-8 w-8 flex-shrink-0 rounded-lg"
+          />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
               StatEdge.ai
             </h1>
-            <p className="text-xs text-muted-foreground font-medium">AI Football Insights</p>
+            <p className="text-xs text-muted-foreground font-medium">
+              AI Football Insights
+            </p>
           </div>
         </div>
       </SidebarHeader>
@@ -108,9 +117,13 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {loading ? (
-                <div className="px-3 py-2 text-xs text-muted-foreground">Loading leagues...</div>
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  Loading leagues...
+                </div>
               ) : leagues.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-muted-foreground">No leagues available</div>
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  No leagues available
+                </div>
               ) : (
                 leagues.map((league) => (
                   <SidebarMenuItem key={league.id}>
@@ -120,7 +133,11 @@ export function AppSidebar() {
                       tooltip={league.name}
                       className="h-9 px-3 rounded-lg font-medium transition-all hover:bg-primary/10 hover:text-primary data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
                     >
-                      <img src={league.logo} alt={league.name} className="h-4 w-4 object-contain" />
+                      <img
+                        src={league.logo}
+                        alt={league.name}
+                        className="h-4 w-4 object-contain"
+                      />
                       <span className="truncate text-sm">{league.name}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -181,8 +198,10 @@ export function AppSidebar() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-purple-600/20 border border-primary/20">
               <User className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{user?.email || "User"}</p>
+            <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+              <p className="text-sm font-semibold truncate">
+                {user?.email || "User"}
+              </p>
               <p className="text-xs text-muted-foreground font-medium">
                 {subscriptionTier ? `${subscriptionTier} Plan` : "Free Plan"}
               </p>
@@ -197,7 +216,9 @@ export function AppSidebar() {
             className="w-full justify-start h-9 rounded-lg font-medium text-muted-foreground hover:text-foreground hover:bg-destructive/10 transition-all"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            <span className="text-sm">Sign Out</span>
+            <span className="text-sm group-data-[collapsible=icon]:hidden">
+              Sign Out
+            </span>
           </Button>
         </div>
       </SidebarFooter>
