@@ -272,7 +272,7 @@ const League = () => {
               {/* Tab Content */}
               {activeTab === "fixtures" && <FixturesTab leagueId={league.id} setActiveTab={setActiveTab} />}
               {activeTab === "table" && <TableTab leagueId={league.id} />}
-              {activeTab === "form" && <FormTab leagueId={league.id} />}
+              {activeTab === "form" && <FormTab leagueId={league.id} setActiveTab={setActiveTab} />}
               {activeTab === "scorers" && <ScorersTab leagueId={league.id} />}
             </main>
           </div>
