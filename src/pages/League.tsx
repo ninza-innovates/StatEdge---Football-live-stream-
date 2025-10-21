@@ -995,7 +995,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-full overflow-x-hidden">
       {/* Left: ALL teams with recent matches */}
       <div className="lg:col-span-2 space-y-4">
         <div className="flex items-center gap-2 mb-2 sm:mb-4">
@@ -1026,13 +1026,13 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                       <div
                         key={i}
                         className={`h-5 w-5 sm:h-6 sm:w-6 rounded text-[10px] sm:text-[11px] font-bold grid place-items-center
-                      ${
-                        r === "W"
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : r === "D"
-                            ? "bg-amber-500/20 text-amber-400"
-                            : "bg-red-500/20 text-red-400"
-                      }`}
+                          ${
+                            r === "W"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : r === "D"
+                                ? "bg-amber-500/20 text-amber-400"
+                                : "bg-red-500/20 text-red-400"
+                          }`}
                       >
                         {r}
                       </div>
@@ -1066,39 +1066,23 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
               </div>
             </div>
 
-            {/* Recent matches (3–5) — touch-scrollable on mobile */}
-            <div className="relative -mx-3 sm:mx-0">
-              <div
-                aria-label="Recent fixtures"
-                dir="ltr"
-                className="
-              flex gap-2
-              sm:grid sm:grid-cols-5 sm:gap-3
-              px-3 sm:px-0
-              overflow-x-auto
-              snap-x snap-mandatory
-              no-scrollbar
-              touch-pan-x
-              overscroll-x-contain
-              [scrollbar-gutter:stable]
-              [-webkit-overflow-scrolling:touch]
-              [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-16px),transparent)]
-            "
-              >
+            {/* Recent matches (3–5) */}
+            <div className="overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+              <div className="flex gap-2 sm:grid sm:grid-cols-5 sm:gap-3 px-1 sm:px-0 snap-x snap-mandatory">
                 {team.matches.map((m: any, i: number) => {
                   const win = m.result === "W";
                   const draw = m.result === "D";
                   return (
                     <div
                       key={i}
-                      className={`relative shrink-0 w-[70%] xs:w-[56%] sm:w-auto snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
-                    ${
-                      win
-                        ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
-                        : draw
-                          ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
-                          : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
-                    }`}
+                      className={`relative shrink-0 w-[46%] xs:w-[42%] sm:w-auto snap-start overflow-hidden rounded-lg p-2 sm:p-3 border transition-all
+                        ${
+                          win
+                            ? "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40"
+                            : draw
+                              ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                              : "bg-red-500/10 border-red-500/20 hover:border-red-500/40"
+                        }`}
                     >
                       <div className="text-[10px] text-muted-foreground mb-1 font-medium">
                         {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
@@ -1126,9 +1110,8 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
 
           <div className="space-y-1">
             {teamsWithRecentMatches.map((t) => {
-              const bottom3Start = Math.max(teamsWithRecentMatches.length - 2, 1); // ranks >= this are bottom 3
               const top4 = t.rank <= 4;
-              const rel = t.rank >= bottom3Start;
+              const rel = t.rank >= Math.max(teamsWithRecentMatches.length - 2, teamsWithRecentMatches.length - 2); // bottom 3 in full list if you want: t.rank >= (len-2)
               return (
                 <div
                   key={t.id}
@@ -1136,7 +1119,7 @@ const FormTab = ({ leagueId }: { leagueId: number }) => {
                 >
                   <div
                     className={`h-6 w-6 rounded text-[11px] font-bold grid place-items-center
-                  ${top4 ? "bg-primary/20 text-primary" : rel ? "bg-red-500/20 text-red-400" : "bg-muted text-muted-foreground"}`}
+                      ${top4 ? "bg-primary/20 text-primary" : rel ? "bg-red-500/20 text-red-400" : "bg-muted text-muted-foreground"}`}
                   >
                     {t.rank}
                   </div>
