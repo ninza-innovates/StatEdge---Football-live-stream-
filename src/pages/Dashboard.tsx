@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
+import { useNavigate } from "react-router-dom";
 import { DateTime } from "luxon"; // npm i luxon
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { generateMatchSlug } from "@/utils/matchSlug";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card } from "@/components/ui/card";
@@ -53,6 +55,7 @@ type Insight = {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Data state
   const [teamsMap, setTeamsMap] = useState<Map<number, Team>>(new Map());
@@ -331,7 +334,17 @@ const Dashboard = () => {
                             </div>
                           </div>
 
-                          <Button variant="hero" className="w-full" size="sm">
+                          <Button 
+                            variant="hero" 
+                            className="w-full" 
+                            size="sm"
+                            onClick={() => {
+                              if (home?.name && away?.name) {
+                                const slug = generateMatchSlug(home.name, away.name);
+                                navigate(`/match/${slug}`);
+                              }
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             View Match
                           </Button>
@@ -427,7 +440,17 @@ const Dashboard = () => {
                                     </div>
                                   </div>
 
-                                  <Button variant="hero" className="w-full" size="sm">
+                                  <Button 
+                                    variant="hero" 
+                                    className="w-full" 
+                                    size="sm"
+                                    onClick={() => {
+                                      if (home?.name && away?.name) {
+                                        const slug = generateMatchSlug(home.name, away.name);
+                                        navigate(`/match/${slug}`);
+                                      }
+                                    }}
+                                  >
                                     <Eye className="h-4 w-4 mr-2" />
                                     View Match
                                   </Button>
