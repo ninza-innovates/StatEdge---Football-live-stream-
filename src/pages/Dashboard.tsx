@@ -62,10 +62,12 @@ const Dashboard = () => {
   const [leaguesMap, setLeaguesMap] = useState<Map<number, LeagueRow>>(new Map());
   const [fixturesToday, setFixturesToday] = useState<FixtureRow[]>([]);
   const [standings, setStandings] = useState<StandingRow[]>([]);
+  const [userFavorites, setUserFavorites] = useState<Set<number>>(new Set());
 
   // UI/FX state
   const [loadingFixtures, setLoadingFixtures] = useState(true);
   const [fixturesError, setFixturesError] = useState<string | null>(null);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   // (Optional) Jump to fixtures when user clicks hero button
   const fixturesRef = useRef<HTMLDivElement | null>(null);
@@ -115,6 +117,22 @@ const Dashboard = () => {
           .order("date", { ascending: true });
         if (fxErr) throw fxErr;
         setFixturesToday((fxData || []) as FixtureRow[]);
+
+        // Fetch user favorites if logged in
+        if (user) {
+          const { data: favoritesData, error: favoritesErr } = await supabase
+            .from("user_favorites")
+            .select("fixture_id")
+            .eq("user_id", user.id);
+          
+          if (!favoritesErr && favoritesData) {
+            const favSet = new Set<number>();
+            favoritesData.forEach((fav) => {
+              if (fav.fixture_id) favSet.add(fav.fixture_id);
+            });
+            setUserFavorites(favSet);
+          }
+        }
       } catch (e: any) {
         console.error(e);
         setFixturesError(e?.message || "Failed to load today’s fixtures");
@@ -124,7 +142,7 @@ const Dashboard = () => {
     };
 
     fetchAll();
-  }, []);
+  }, [user]);
 
   // === Featured Insights (simple, explainable heuristics) ===
   const insights = useMemo<Insight[]>(() => {
@@ -183,10 +201,15 @@ const Dashboard = () => {
     return [...bestByFx.values()].slice(0, 3);
   }, [fixturesToday, standings]);
 
-  // Group fixtures by league
+  // Group fixtures by league, optionally filtering by favorites
   const fixturesByLeague = useMemo(() => {
+    // Filter fixtures based on favorites toggle
+    const filteredFixtures = showOnlyFavorites
+      ? fixturesToday.filter((fx) => userFavorites.has(fx.id))
+      : fixturesToday;
+
     const grouped = new Map<number, FixtureRow[]>();
-    fixturesToday.forEach((fx) => {
+    filteredFixtures.forEach((fx) => {
       const existing = grouped.get(fx.league_id) || [];
       existing.push(fx);
       grouped.set(fx.league_id, existing);
@@ -199,7 +222,7 @@ const Dashboard = () => {
       const orderB = leagueB?.order_index ?? 999;
       return orderA - orderB;
     });
-  }, [fixturesToday, leaguesMap]);
+  }, [fixturesToday, leaguesMap, showOnlyFavorites, userFavorites]);
 
   const scrollToFixtures = () => {
     fixturesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -272,8 +295,19 @@ const Dashboard = () => {
 
                 {/* All / Favourites Tabs */}
                 <div className="flex gap-2 ml-auto">
-                  <Button variant="hero" size="sm">All</Button>
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button 
+                    variant={!showOnlyFavorites ? "hero" : "outline"} 
+                    size="sm"
+                    onClick={() => setShowOnlyFavorites(false)}
+                  >
+                    All
+                  </Button>
+                  <Button 
+                    variant={showOnlyFavorites ? "hero" : "outline"} 
+                    size="sm" 
+                    className="gap-2"
+                    onClick={() => setShowOnlyFavorites(true)}
+                  >
                     <Heart className="h-4 w-4" />
                     Favourites
                   </Button>
