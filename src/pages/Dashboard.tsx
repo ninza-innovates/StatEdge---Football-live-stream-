@@ -445,17 +445,6 @@ const Dashboard = () => {
 
                               return (
                                 <Card key={fx.id} className="glass-card hover-lift p-5 space-y-4">
-                                  <div className="flex items-center gap-2">
-                                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                                      {fx.status || "Scheduled"}
-                                    </Badge>
-                                    {fx.goals && typeof fx.goals.home === "number" && typeof fx.goals.away === "number" ? (
-                                      <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">
-                                        {fx.goals.home} : {fx.goals.away}
-                                      </Badge>
-                                    ) : null}
-                                  </div>
-
                                   <div>
                                     <h3 className="font-bold text-foreground mb-2">
                                       {home?.name || "Home"} vs {away?.name || "Away"}
