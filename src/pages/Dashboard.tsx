@@ -41,6 +41,7 @@ type LeagueRow = {
   logo?: string | null;
   slug?: string | null;
   country?: string | null;
+  order_index?: number | null;
 };
 
 type Insight = {
@@ -88,7 +89,7 @@ const Dashboard = () => {
         // Leagues (for league name/logo)
         const { data: leaguesData, error: leaguesErr } = await supabase
           .from("leagues")
-          .select("id,name,logo,slug,country");
+          .select("id,name,logo,slug,country,order_index");
         if (leaguesErr) throw leaguesErr;
         const lMap = new Map<number, LeagueRow>();
         (leaguesData || []).forEach((l) => lMap.set(l.id, l as LeagueRow));
@@ -187,11 +188,13 @@ const Dashboard = () => {
       existing.push(fx);
       grouped.set(fx.league_id, existing);
     });
-    // Sort leagues by their order_index if available, otherwise by name
+    // Sort leagues by their order_index (same as sidebar)
     return Array.from(grouped.entries()).sort((a, b) => {
       const leagueA = leaguesMap.get(a[0]);
       const leagueB = leaguesMap.get(b[0]);
-      return (leagueA?.name || "").localeCompare(leagueB?.name || "");
+      const orderA = leagueA?.order_index ?? 999;
+      const orderB = leagueB?.order_index ?? 999;
+      return orderA - orderB;
     });
   }, [fixturesToday, leaguesMap]);
 
