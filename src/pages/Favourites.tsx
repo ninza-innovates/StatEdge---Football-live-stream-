@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { generateMatchSlug } from "@/utils/matchSlug";
 
 interface FavouriteFixture {
   id: string;
@@ -224,7 +225,7 @@ export default function Favourites() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => navigate(`/match/${fav.fixture_id}`)}
+                          onClick={() => navigate(`/match/${generateMatchSlug(fav.fixture.home_team.name, fav.fixture.away_team.name)}`)}
                         >
                           View Match
                         </Button>
