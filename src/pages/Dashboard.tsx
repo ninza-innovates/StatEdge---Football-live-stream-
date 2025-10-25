@@ -179,6 +179,22 @@ const Dashboard = () => {
     return [...bestByFx.values()].slice(0, 3);
   }, [fixturesToday, standings]);
 
+  // Group fixtures by league
+  const fixturesByLeague = useMemo(() => {
+    const grouped = new Map<number, FixtureRow[]>();
+    fixturesToday.forEach((fx) => {
+      const existing = grouped.get(fx.league_id) || [];
+      existing.push(fx);
+      grouped.set(fx.league_id, existing);
+    });
+    // Sort leagues by their order_index if available, otherwise by name
+    return Array.from(grouped.entries()).sort((a, b) => {
+      const leagueA = leaguesMap.get(a[0]);
+      const leagueB = leaguesMap.get(b[0]);
+      return (leagueA?.name || "").localeCompare(leagueB?.name || "");
+    });
+  }, [fixturesToday, leaguesMap]);
+
   const scrollToFixtures = () => {
     fixturesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -346,84 +362,77 @@ const Dashboard = () => {
                     <p className="text-muted-foreground">No matches found for the selected filters</p>
                   </Card>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {fixturesToday.map((fx) => {
-                      const home = teamsMap.get(fx.home_team_id);
-                      const away = teamsMap.get(fx.away_team_id);
-                      const league = leaguesMap.get(fx.league_id);
-                      const localDate = new Date(fx.date);
-                      const timeStr = localDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                      const dayStr = localDate.toLocaleDateString([], { month: "short", day: "numeric" });
-
+                  <div className="space-y-8">
+                    {fixturesByLeague.map(([leagueId, fixtures]) => {
+                      const league = leaguesMap.get(leagueId);
                       return (
-                        <Card key={fx.id} className="glass-card hover-lift p-5 space-y-4">
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                              {fx.status || "Scheduled"}
-                            </Badge>
-                            {fx.goals && typeof fx.goals.home === "number" && typeof fx.goals.away === "number" ? (
-                              <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">
-                                {fx.goals.home} : {fx.goals.away}
-                              </Badge>
-                            ) : null}
-                          </div>
-
-                          <div>
-                            <h3 className="font-bold text-foreground mb-2">
-                              {home?.name || "Home"} vs {away?.name || "Away"}
+                        <div key={leagueId} className="space-y-4">
+                          {/* League Header */}
+                          <div className="flex items-center gap-3 pb-2 border-b border-border">
+                            {league?.logo && (
+                              <img
+                                src={league.logo}
+                                alt={league.name}
+                                className="h-6 w-6 object-contain"
+                              />
+                            )}
+                            <h3 className="text-lg font-semibold text-foreground">
+                              {league?.name || `League ${leagueId}`}
                             </h3>
-                            <div className="space-y-1 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-3 w-3" />
-                                <span>{dayStr} at {timeStr}</span>
-                              </div>
-                              {fx.venue ? (
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="h-3 w-3" />
-                                  <span>{fx.venue}</span>
-                                </div>
-                              ) : null}
-                              <div className="flex items-center gap-2">
-                                <Trophy className="h-3 w-3" />
-                                {league?.logo ? (
-                                  <img
-                                    src={league.logo}
-                                    alt={league.name}
-                                    className="h-4 w-4 object-contain inline-block"
-                                  />
-                                ) : null}
-                                <span>{league?.name || `League ${fx.league_id}`}</span>
-                              </div>
-                            </div>
+                            <Badge variant="outline" className="ml-2">
+                              {fixtures.length} {fixtures.length === 1 ? 'match' : 'matches'}
+                            </Badge>
                           </div>
 
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <div className="h-5 w-5 rounded-full bg-muted overflow-hidden grid place-items-center">
-                                  {home?.logo ? (
-                                    <img src={home.logo} alt={home.name} className="h-full w-full object-cover" />
-                                  ) : null}
-                                </div>
-                                <span className="text-foreground font-medium">{home?.name || "Home"}</span>
-                              </div>
-                              <span className="text-muted-foreground">vs</span>
-                              <div className="flex items-center gap-1">
-                                <div className="h-5 w-5 rounded-full bg-muted overflow-hidden grid place-items-center">
-                                  {away?.logo ? (
-                                    <img src={away.logo} alt={away.name} className="h-full w-full object-cover" />
-                                  ) : null}
-                                </div>
-                                <span className="text-foreground font-medium">{away?.name || "Away"}</span>
-                              </div>
-                            </div>
-                          </div>
+                          {/* Fixtures Grid */}
+                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {fixtures.map((fx) => {
+                              const home = teamsMap.get(fx.home_team_id);
+                              const away = teamsMap.get(fx.away_team_id);
+                              const localDate = new Date(fx.date);
+                              const timeStr = localDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                              const dayStr = localDate.toLocaleDateString([], { month: "short", day: "numeric" });
 
-                          <Button variant="hero" className="w-full" size="sm">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Match
-                          </Button>
-                        </Card>
+                              return (
+                                <Card key={fx.id} className="glass-card hover-lift p-5 space-y-4">
+                                  <div className="flex items-center gap-2">
+                                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                      {fx.status || "Scheduled"}
+                                    </Badge>
+                                    {fx.goals && typeof fx.goals.home === "number" && typeof fx.goals.away === "number" ? (
+                                      <Badge className="ml-auto bg-primary/20 text-primary border-primary/30">
+                                        {fx.goals.home} : {fx.goals.away}
+                                      </Badge>
+                                    ) : null}
+                                  </div>
+
+                                  <div>
+                                    <h3 className="font-bold text-foreground mb-2">
+                                      {home?.name || "Home"} vs {away?.name || "Away"}
+                                    </h3>
+                                    <div className="space-y-1 text-sm text-muted-foreground">
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="h-3 w-3" />
+                                        <span>{dayStr} at {timeStr}</span>
+                                      </div>
+                                      {fx.venue ? (
+                                        <div className="flex items-center gap-2">
+                                          <MapPin className="h-3 w-3" />
+                                          <span>{fx.venue}</span>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </div>
+
+                                  <Button variant="hero" className="w-full" size="sm">
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View Match
+                                  </Button>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
