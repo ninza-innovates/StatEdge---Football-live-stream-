@@ -76,37 +76,15 @@ serve(async (req) => {
         return new Response('No user_id', { status: 400 });
       }
 
-      // Get the subscription details
-      const subscriptionId = session.subscription as string;
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      
-      // Get the price ID from the subscription
-      const priceId = subscription.items.data[0]?.price.id;
-      const tier = PRICE_TO_TIER[priceId] || 'Unknown';
-      
-      console.log(`Updating user ${userId} to ${tier} tier (price: ${priceId})`);
+      await supabase
+      .from('subscribers')
+      .upsert({
+        user_id: userId,
+        stripe_customer_id: customerId,
+        updated_at: new Date().toISOString(),
+      });
 
-      // Calculate subscription end date
-      const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
-
-      // Update subscriber record
-      const { error: updateError } = await supabase
-        .from('subscribers')
-        .upsert({
-          user_id: userId,
-          stripe_customer_id: customerId,
-          subscribed: true,
-          subscription_tier: tier,
-          subscription_end: currentPeriodEnd.toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-      if (updateError) {
-        console.error('Error updating subscriber:', updateError);
-        throw updateError;
-      }
-
-      console.log('Subscriber updated successfully');
+      console.log('Subscriber completed successfully');
     }
 
     // Handle subscription updates
@@ -119,7 +97,7 @@ serve(async (req) => {
       const tier = PRICE_TO_TIER[priceId] || 'Unknown';
       const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
 
-      const { error: updateError } = await supabase
+      const { updateError } = await supabase
         .from('subscribers')
         .update({
           subscribed: subscription.status === 'active',

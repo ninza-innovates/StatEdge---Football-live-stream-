@@ -187,7 +187,7 @@ export default function Account() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Subscription Plan</span>
                     <Badge variant={isSubscribed ? "default" : "secondary"}>
-                      {subscriptionTier ? `${subscriptionTier} Plan` : 'Free Plan'}
+                      {isSubscribed && subscriptionTier ? `${subscriptionTier} Plan` : 'Free Plan'}
                     </Badge>
                   </div>
                   

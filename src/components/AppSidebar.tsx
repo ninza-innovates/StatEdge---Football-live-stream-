@@ -32,7 +32,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { subscriptionTier } = useSubscription();
+  const { isSubscribed, subscriptionTier } = useSubscription();
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -203,7 +203,7 @@ export function AppSidebar() {
                 {user?.email || "User"}
               </p>
               <p className="text-xs text-muted-foreground font-medium">
-                {subscriptionTier ? `${subscriptionTier} Plan` : "Free Plan"}
+                {isSubscribed && subscriptionTier ? `${subscriptionTier} Plan` : "Free Plan"}
               </p>
             </div>
           </div>
