@@ -30,6 +30,14 @@ const PricingModal = ({ open, onOpenChange }: PricingModalProps) => {
     monthly: 'price_1S5umg93V4MxVtg8OZ7fGzOi'
   };
 
+  const handleModalClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      // Navigate back or to dashboard when modal is closed
+      navigate(-1);
+    }
+    onOpenChange(isOpen);
+  };
+
   const handleSubscribe = async (planType: 'weekly' | 'monthly') => {
     if (!user) {
       toast({
@@ -103,7 +111,7 @@ const PricingModal = ({ open, onOpenChange }: PricingModalProps) => {
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleModalClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl md:text-3xl font-bold text-center mb-2">
