@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-08-27.basil',
 });
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
@@ -87,7 +87,16 @@ serve(async (req) => {
       console.log(`Updating user ${userId} to ${tier} tier (price: ${priceId})`);
 
       // Calculate subscription end date
-      const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+      const currentPeriodEndUnix =
+        subscription.current_period_end ??
+        subscription.items?.data?.[0]?.current_period_end;
+
+      if (!currentPeriodEndUnix) {
+        console.error('Missing current_period_end in subscription payload:', subscription);
+        throw new Error('Missing current_period_end');
+      }
+
+      const currentPeriodEnd = new Date(currentPeriodEndUnix * 1000);
 
       // Update subscriber record
       const { error: updateError } = await supabase
@@ -117,7 +126,16 @@ serve(async (req) => {
       const customerId = subscription.customer as string;
       const priceId = subscription.items.data[0]?.price.id;
       const tier = PRICE_TO_TIER[priceId] || 'Unknown';
-      const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+      const currentPeriodEndUnix =
+        subscription.current_period_end ??
+        subscription.items?.data?.[0]?.current_period_end;
+
+      if (!currentPeriodEndUnix) {
+        console.error('Missing current_period_end:', subscription);
+        return new Response('Missing current_period_end', { status: 400 });
+      }
+
+      const currentPeriodEnd = new Date(currentPeriodEndUnix * 1000);
 
       const { error: updateError } = await supabase
         .from('subscribers')
