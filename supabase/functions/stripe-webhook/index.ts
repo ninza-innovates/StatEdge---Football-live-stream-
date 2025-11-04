@@ -12,7 +12,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Map price IDs to subscription tiers
 const PRICE_TO_TIER: Record<string, string> = {
   'price_1S5umL93V4MxVtg8ofpuszEl': 'Weekly',
   'price_1S5umg93V4MxVtg8OZ7fGzOi': 'Monthly',
