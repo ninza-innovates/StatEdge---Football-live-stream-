@@ -57,19 +57,16 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Data state
   const [teamsMap, setTeamsMap] = useState<Map<number, Team>>(new Map());
   const [leaguesMap, setLeaguesMap] = useState<Map<number, LeagueRow>>(new Map());
   const [fixturesToday, setFixturesToday] = useState<FixtureRow[]>([]);
   const [standings, setStandings] = useState<StandingRow[]>([]);
   const [userFavorites, setUserFavorites] = useState<Set<number>>(new Set());
 
-  // UI/FX state
   const [loadingFixtures, setLoadingFixtures] = useState(true);
   const [fixturesError, setFixturesError] = useState<string | null>(null);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
-  // (Optional) Jump to fixtures when user clicks hero button
   const fixturesRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
