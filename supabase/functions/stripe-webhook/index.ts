@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
-  apiVersion: '2025-08-27.basil', //update the stripe api version
+  apiVersion: '2025-08-27.basil',
 });
 
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
