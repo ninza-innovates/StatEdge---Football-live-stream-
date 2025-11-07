@@ -24,7 +24,6 @@ const Start = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
-    // Facebook Pixel - PageView
     if (window.fbq) {
       window.fbq('track', 'PageView');
     }
