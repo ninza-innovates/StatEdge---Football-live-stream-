@@ -37,9 +37,10 @@ The dev server listens on port **8080** (`vite.config.ts`).
 
 ## Getting started
 
-Node.js and npm are required.
+Node.js and npm are required. Copy the environment template before you start (the filled `.env` stays on your machine):
 
 ```sh
+cp .env.example .env
 npm install
 npm run dev
 ```
@@ -55,7 +56,7 @@ npm run preview      # serve the production build
 npm run lint         # eslint .
 ```
 
-The Vite app does not read environment variables. The Supabase URL and publishable key are set in `src/integrations/supabase/client.ts`. A `.env` file in the repo defines `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID`, and the client does not import them.
+The Vite app does not read environment variables. The Supabase URL and publishable key are set in `src/integrations/supabase/client.ts`. `.env.example` lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID`. Copy it to `.env` and fill in your own project values; the client does not import them.
 
 Edge Functions read these secrets (`Deno.env.get`). Set them in the Supabase project, not in the Vite app. Use your own values:
 
