@@ -16,7 +16,8 @@
 ## How to verify
 
 - [ ] `npm run lint` (ESLint 9; CI runs this on Node.js 22)
-- [ ] `npm run build` (Vite production build; CI runs this after lint)
+- [ ] `npm run typecheck` (`tsc --noEmit` for the app and `vite.config.ts`; CI runs this after lint)
+- [ ] `npm run build` (Vite production build; CI runs this after typecheck)
 - [ ] Checked in the browser on `http://localhost:8080` if the UI or a route changed
 - [ ] Signed-out routes (`/`, `/start`, `/auth`) still behave as before if those pages were touched
 - [ ] Paywalled match content and the pricing modal still match the subscription state if billing or match threads changed
