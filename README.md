@@ -54,6 +54,7 @@ npm run build        # production build
 npm run build:dev    # vite build --mode development
 npm run preview      # serve the production build
 npm run lint         # eslint .
+npm run typecheck    # tsc --noEmit for the app and vite.config.ts
 ```
 
 The Vite app does not read environment variables. The Supabase URL and publishable key are set in `src/integrations/supabase/client.ts`. `.env.example` lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID`. Copy it to `.env` and fill in your own project values; the client does not import them.
