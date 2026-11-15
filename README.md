@@ -1,6 +1,53 @@
 # StatEdge.ai
 
-StatEdge.ai is a web app for AI-assisted football match insights. Visitors can browse a public landing page, create an account, and (once signed in) open a dashboard of today's fixtures, league pages, saved favourites, and per-match threads. Match threads show stored AI analysis — summary, stats, tactics, lineups and injuries, and betting angles — generated from API-Football data. Weekly and monthly access is sold through Stripe.
+StatEdge.ai is a web app for AI-assisted football match insights. Visitors can browse a public landing page, create an account, and, once signed in, open a dashboard of today's fixtures, league pages, saved favourites, and per-match threads. Match threads show stored AI analysis — summary, stats, tactics, lineups and injuries, and betting angles — generated from API-Football data. Weekly and monthly access is sold through Stripe.
+
+This repository was bootstrapped with [Lovable](https://lovable.dev/projects/943dc745-aad8-44f1-8522-724e584cd877).
+
+## Stack
+
+- [Vite](https://vitejs.dev/) 5 with `@vitejs/plugin-react-swc`, React 18, and TypeScript
+- React Router 7
+- Tailwind CSS, `tailwindcss-animate`, and `@tailwindcss/typography`
+- shadcn/ui on Radix UI (dialog, label, select, separator, slot, tabs, toast, tooltip)
+- Supabase (`@supabase/supabase-js`) for auth, Postgres, and Edge Functions (Deno)
+- Stripe (checkout, Customer Portal, webhooks) in Edge Functions
+- OpenAI Chat Completions (`gpt-4o`) for match insights
+- API-Football for fixtures, standings, squads, and player stats
+- Resend for the support contact form
+- Zod, Luxon, Lucide, and `react-helmet`
+- ESLint 9
+
+The dev server listens on port **8080** (`vite.config.ts`). In development, Vite also loads `lovable-tagger`.
+
+## Run locally
+
+Node.js and npm are required. Copy the environment template before you start (the filled `.env` stays on your machine):
+
+```sh
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Then open `http://localhost:8080`.
+
+The Vite app does not read environment variables. The Supabase URL and publishable key are set in `src/integrations/supabase/client.ts`. `.env.example` lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID`. Copy it to `.env` and fill in your own project values; the client does not import them.
+
+Apply `supabase/migrations` to the database before the app can load leagues, fixtures, and subscriptions. Function schedules are in `supabase/config.toml`.
+
+## Scripts
+
+From `package.json`:
+
+```sh
+npm run dev          # start the Vite dev server on port 8080
+npm run build        # production build
+npm run build:dev    # vite build --mode development
+npm run preview      # serve the production build
+npm run lint         # eslint .
+npm run typecheck    # tsc --noEmit for the app and vite.config.ts
+```
 
 ## Key features
 
@@ -18,46 +65,7 @@ StatEdge.ai is a web app for AI-assisted football match insights. Visitors can b
 
 Routes other than `/`, `/start`, and `/auth` require a signed-in user.
 
-## Tech stack
-
-- [Vite](https://vitejs.dev/) 5 with `@vitejs/plugin-react-swc`
-- React 18 and TypeScript
-- React Router 7
-- Tailwind CSS, `tailwindcss-animate`, and `@tailwindcss/typography`
-- shadcn/ui on Radix UI (dialog, label, select, separator, slot, tabs, toast, tooltip)
-- Supabase (`@supabase/supabase-js`) for auth, Postgres, and Edge Functions (Deno)
-- Stripe (checkout, Customer Portal, webhooks) in Edge Functions
-- OpenAI Chat Completions for match insights
-- API-Football for fixtures, standings, squads, and player stats
-- Resend for the support contact form
-- Zod, Luxon, Lucide, and `react-helmet`
-- ESLint 9
-
-The dev server listens on port **8080** (`vite.config.ts`).
-
-## Getting started
-
-Node.js and npm are required. Copy the environment template before you start (the filled `.env` stays on your machine):
-
-```sh
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Then open `http://localhost:8080`.
-
-Other scripts from `package.json`:
-
-```sh
-npm run build        # production build
-npm run build:dev    # vite build --mode development
-npm run preview      # serve the production build
-npm run lint         # eslint .
-npm run typecheck    # tsc --noEmit for the app and vite.config.ts
-```
-
-The Vite app does not read environment variables. The Supabase URL and publishable key are set in `src/integrations/supabase/client.ts`. `.env.example` lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID`. Copy it to `.env` and fill in your own project values; the client does not import them.
+## Edge Function secrets
 
 Edge Functions read these secrets (`Deno.env.get`). Set them in the Supabase project, not in the Vite app. Use your own values:
 
@@ -72,8 +80,6 @@ RESEND_API_KEY=re_your_key
 ```
 
 `initial-data-sync` and `test-api-connection` read `RAPIDAPI_KEY`. `sync-football-data` and `generate-match-insights` currently use a key written in those function files. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are used by the data, Stripe, and insight functions. `STRIPE_SECRET_KEY` is used by checkout, portal, and the webhook. `STRIPE_WEBHOOK_SECRET` is used by `stripe-webhook`. `OPENAI_API_KEY` is used by `generate-match-insights`. `RESEND_API_KEY` is used by `send-contact-email`.
-
-Apply `supabase/migrations` to the database before the app can load leagues, fixtures, and subscriptions. Function schedules are in `supabase/config.toml`.
 
 ## Project structure
 
