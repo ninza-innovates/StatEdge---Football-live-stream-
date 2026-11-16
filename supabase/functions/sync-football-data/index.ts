@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-const RAPIDAPI_KEY = "8ea72576efbc62e0e2f7851591b7ba8c"; // move to secret!
+const RAPIDAPI_KEY = Deno.env.get("RAPIDAPI_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 // >>> ONLY THESE LEAGUES <<<

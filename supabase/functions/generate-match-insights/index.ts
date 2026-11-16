@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const RAPIDAPI_KEY = "8ea72576efbc62e0e2f7851591b7ba8c"; // consider moving to env/secret
+const RAPIDAPI_KEY = Deno.env.get("RAPIDAPI_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -13,6 +13,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 async function callRapidAPI(endpoint) {
+  if (!RAPIDAPI_KEY) {
+    throw new Error("RAPIDAPI_KEY not set in Edge Function secrets");
+  }
   const response = await fetch(`https://v3.football.api-sports.io/${endpoint}`, {
     headers: {
       "x-rapidapi-key": RAPIDAPI_KEY,
