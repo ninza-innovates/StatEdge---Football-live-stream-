@@ -20,9 +20,9 @@ This repository was bootstrapped with [Lovable](https://lovable.dev/projects/943
 
 The dev server listens on port **8080** (`vite.config.ts`). In development, Vite also loads `lovable-tagger`.
 
-## Run locally
+## Setup
 
-Node.js and npm are required. Copy the environment template before you start (the filled `.env` stays on your machine):
+Node.js 22 and npm are required. Copy the environment template, then install and start the dev server. The filled `.env` stays on your machine:
 
 ```sh
 cp .env.example .env
@@ -30,11 +30,14 @@ npm install
 npm run dev
 ```
 
-Then open `http://localhost:8080`.
+Open `http://localhost:8080`.
 
-The Vite app does not read environment variables. The Supabase URL and publishable key are set in `src/integrations/supabase/client.ts`. `.env.example` lists `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID`. Copy it to `.env` and fill in your own project values; the client does not import them.
+`.env.example` documents the environment names for this app:
 
-Apply `supabase/migrations` to the database before the app can load leagues, fixtures, and subscriptions. Function schedules are in `supabase/config.toml`.
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_SUPABASE_PROJECT_ID` are the browser project values. The client in `src/integrations/supabase/client.ts` does not import them; the URL and anon key are written in that file.
+- Edge Functions read `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `OPENAI_API_KEY`, `RAPIDAPI_KEY`, and `RESEND_API_KEY` with `Deno.env.get`. Set those in the Supabase project. See [Edge Function secrets](#edge-function-secrets).
+
+Apply `supabase/migrations` before the app can load leagues, fixtures, and subscriptions. Function schedules are in `supabase/config.toml`.
 
 ## Scripts
 
@@ -79,7 +82,7 @@ RAPIDAPI_KEY=your-rapidapi-key
 RESEND_API_KEY=re_your_key
 ```
 
-`initial-data-sync` and `test-api-connection` read `RAPIDAPI_KEY`. `sync-football-data` and `generate-match-insights` currently use a key written in those function files. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are used by the data, Stripe, and insight functions. `STRIPE_SECRET_KEY` is used by checkout, portal, and the webhook. `STRIPE_WEBHOOK_SECRET` is used by `stripe-webhook`. `OPENAI_API_KEY` is used by `generate-match-insights`. `RESEND_API_KEY` is used by `send-contact-email`.
+`initial-data-sync`, `test-api-connection`, `sync-football-data`, and `generate-match-insights` read `RAPIDAPI_KEY`. `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are used by the data, Stripe, and insight functions. `STRIPE_SECRET_KEY` is used by checkout, portal, and the webhook. `STRIPE_WEBHOOK_SECRET` is used by `stripe-webhook`. `OPENAI_API_KEY` is used by `generate-match-insights`. `RESEND_API_KEY` is used by `send-contact-email`.
 
 ## Project structure
 
