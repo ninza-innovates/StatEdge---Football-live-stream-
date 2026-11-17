@@ -1,16 +1,24 @@
 /**
+ * URL slug for one team name.
+ * Punctuation is removed and repeated hyphens are collapsed, so
+ * "Brighton & Hove Albion" becomes "brighton-hove-albion".
+ * Match pages resolve teams with this same function.
+ */
+export function slugifyTeamName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+/**
  * Generate SEO-friendly slug from team names
  * Example: "Leeds United" + "Sheffield United" -> "leeds-united-vs-sheffield-united"
  */
 export function generateMatchSlug(homeTeam: string, awayTeam: string): string {
-  const slugify = (str: string) => 
-    str.toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
-  
-  return `${slugify(homeTeam)}-vs-${slugify(awayTeam)}`;
+  return `${slugifyTeamName(homeTeam)}-vs-${slugifyTeamName(awayTeam)}`;
 }
 
 /**
