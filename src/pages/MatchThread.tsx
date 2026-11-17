@@ -17,7 +17,7 @@ import { AdvancedInsights } from "@/components/matchthread/AdvancedInsights";
 import { LineupsSection } from "@/components/matchthread/LineupsSection";
 import { BettingInsights } from "@/components/matchthread/BettingInsights";
 import { QuickNav } from "@/components/matchthread/QuickNav";
-import { generateMatchTitle } from "@/utils/matchSlug";
+import { generateMatchTitle, slugifyTeamName } from "@/utils/matchSlug";
 import PricingModal from "@/components/PricingModal";
 import { Sparkles, BarChart3, Target, TrendingUp, Users, DollarSign } from "lucide-react";
 
@@ -73,7 +73,101 @@ const MatchThread = () => {
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchMatchData = async () => {
+      setLoading(true);
+      setFixture(null);
+      setHomeTeam(null);
+      setAwayTeam(null);
+      setLeague(null);
+      setAiSummary(null);
+
+      try {
+        const parts = slug?.split("-vs-");
+        if (!parts || parts.length !== 2) {
+          console.error("Invalid match slug format");
+          return;
+        }
+
+        const [homeTeamSlug, awayTeamSlug] = parts;
+
+        const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
+
+        if (cancelled) return;
+        if (teamsError) throw teamsError;
+
+        // The same club can exist on more than one team row. A slug only
+        // identifies the name, so search fixtures across every matching id.
+        const homeCandidates = (teamsData ?? []).filter((t) => slugifyTeamName(t.name) === homeTeamSlug);
+        const awayCandidates = (teamsData ?? []).filter((t) => slugifyTeamName(t.name) === awayTeamSlug);
+
+        if (homeCandidates.length === 0 || awayCandidates.length === 0) {
+          console.error("Teams not found");
+          return;
+        }
+
+        const { data: fixtureData, error: fixtureError } = await supabase
+          .from("fixtures")
+          .select("*")
+          .in(
+            "home_team_id",
+            homeCandidates.map((t) => t.id),
+          )
+          .in(
+            "away_team_id",
+            awayCandidates.map((t) => t.id),
+          )
+          .order("date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (fixtureError) throw fixtureError;
+
+        if (!fixtureData) {
+          console.error("Fixture not found");
+          return;
+        }
+
+        const homeTeamMatch =
+          homeCandidates.find((t) => t.id === fixtureData.home_team_id) ?? homeCandidates[0];
+        const awayTeamMatch =
+          awayCandidates.find((t) => t.id === fixtureData.away_team_id) ?? awayCandidates[0];
+        setHomeTeam(homeTeamMatch);
+        setAwayTeam(awayTeamMatch);
+        setFixture(fixtureData);
+
+        const { data: leagueData, error: leagueError } = await supabase
+          .from("leagues")
+          .select("*")
+          .eq("id", fixtureData.league_id)
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (leagueError) throw leagueError;
+        setLeague(leagueData);
+
+        const { data: aiData, error: aiError } = await supabase
+          .from("ai_summaries")
+          .select("*")
+          .eq("fixture_id", fixtureData.id)
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (aiError && aiError.code !== "PGRST116") throw aiError;
+        setAiSummary(aiData);
+      } catch (error) {
+        if (!cancelled) console.error("Error fetching match data:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
     fetchMatchData();
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
   useEffect(() => {
@@ -84,89 +178,6 @@ const MatchThread = () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [isSubscribed, subscriptionLoading]);
-
-  const fetchMatchData = async () => {
-    try {
-      const parts = slug?.split("-vs-");
-      if (!parts || parts.length !== 2) {
-        console.error("Invalid match slug format");
-        setLoading(false);
-        return;
-      }
-
-      const homeTeamSlug = parts[0];
-      const awayTeamSlug = parts[1];
-
-      const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
-
-      if (teamsError) throw teamsError;
-
-      const homeTeamMatch = teamsData?.find(
-        (t) =>
-          t.name
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, "")
-            .replace(/\s+/g, "-") === homeTeamSlug,
-      );
-      const awayTeamMatch = teamsData?.find(
-        (t) =>
-          t.name
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, "")
-            .replace(/\s+/g, "-") === awayTeamSlug,
-      );
-
-      if (!homeTeamMatch || !awayTeamMatch) {
-        console.error("Teams not found");
-        setLoading(false);
-        return;
-      }
-
-      setHomeTeam(homeTeamMatch);
-      setAwayTeam(awayTeamMatch);
-
-      const { data: fixtureData, error: fixtureError } = await supabase
-        .from("fixtures")
-        .select("*")
-        .eq("home_team_id", homeTeamMatch.id)
-        .eq("away_team_id", awayTeamMatch.id)
-        .order("date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (fixtureError) throw fixtureError;
-
-      if (!fixtureData) {
-        console.error("Fixture not found");
-        setLoading(false);
-        return;
-      }
-
-      setFixture(fixtureData);
-
-      const { data: leagueData, error: leagueError } = await supabase
-        .from("leagues")
-        .select("*")
-        .eq("id", fixtureData.league_id)
-        .maybeSingle();
-
-      if (leagueError) throw leagueError;
-      setLeague(leagueData);
-
-      const { data: aiData, error: aiError } = await supabase
-        .from("ai_summaries")
-        .select("*")
-        .eq("fixture_id", fixtureData.id)
-        .maybeSingle();
-
-      if (aiError && aiError.code !== "PGRST116") throw aiError;
-      setAiSummary(aiData);
-    } catch (error) {
-      console.error("Error fetching match data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading || subscriptionLoading) {
     return (
