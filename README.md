@@ -50,7 +50,7 @@ npm run build:dev    # vite build --mode development
 npm run preview      # serve the production build
 npm run lint         # eslint .
 npm run typecheck    # tsc --noEmit for the app and vite.config.ts
-npm test             # node:test for the match slug helpers
+npm test             # node:test for match slugs and featured insights
 ```
 
 ## Key features
@@ -96,7 +96,7 @@ src/
   contexts/               auth and subscription state
   hooks/
   integrations/supabase/  browser client and generated table types
-  utils/matchSlug.ts      fixture URL slugs
+  utils/                  fixture URL slugs and featured-insight scoring
   assets/                 logo and league artwork
 public/                   favicon and uploaded images
 supabase/
