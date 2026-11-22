@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import {
+  contactConfirmationHtml,
+  contactNotificationHtml,
+  contactNotificationSubject,
+  parseContactSubmission,
+} from "./format.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -9,13 +15,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface ContactRequest {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-}
-
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,8 +22,15 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     console.log("Received contact form submission");
-    const { name, email, subject, message }: ContactRequest = await req.json();
+    const parsed = parseContactSubmission(await req.json());
+    if (!parsed.ok) {
+      return new Response(JSON.stringify({ error: parsed.error }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
+    const { name, email, subject, message } = parsed.value;
     console.log(`Processing contact from: ${name} (${email})`);
 
     // Send email to support team
@@ -32,16 +38,8 @@ const handler = async (req: Request): Promise<Response> => {
       from: "StatEdge Support <support@statedge.ai>",
       to: ["support@statedge.ai"],
       replyTo: email,
-      subject: `Contact Form: ${subject}`,
-      html: `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>From:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <hr />
-        <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-      `,
+      subject: contactNotificationSubject(subject),
+      html: contactNotificationHtml({ name, email, subject, message }),
     });
 
     console.log("Email sent successfully:", emailResponse);
@@ -51,14 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: "StatEdge Support <support@statedge.ai>",
       to: [email],
       subject: "We received your message!",
-      html: `
-        <h1>Thank you for contacting StatEdge.ai, ${name}!</h1>
-        <p>We have received your message and will get back to you as soon as possible.</p>
-        <p><strong>Your message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-        <hr />
-        <p>Best regards,<br>The StatEdge Team</p>
-      `,
+      html: contactConfirmationHtml({ name, message }),
     });
 
     return new Response(JSON.stringify({ success: true }), {
