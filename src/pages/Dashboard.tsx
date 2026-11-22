@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { DateTime } from "luxon"; // npm i luxon
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { pickFeaturedInsights } from "@/utils/featuredInsights";
 import { generateMatchSlug } from "@/utils/matchSlug";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -44,13 +45,6 @@ type LeagueRow = {
   slug?: string | null;
   country?: string | null;
   order_index?: number | null;
-};
-
-type Insight = {
-  tag: "Classic Rivalry" | "Big Match" | "Upset Watch" | "Hot Form" | "High Scoring";
-  title: string;
-  heat: number; // 0..100
-  fixture: FixtureRow;
 };
 
 const Dashboard = () => {
@@ -141,62 +135,10 @@ const Dashboard = () => {
     fetchAll();
   }, [user]);
 
-  // === Featured Insights (simple, explainable heuristics) ===
-  const insights = useMemo<Insight[]>(() => {
-    if (!fixturesToday.length || !standings.length) return [];
-
-    const rankOf = (id: number) => standings.find((s) => s.team_id === id)?.rank ?? 99;
-    const formScore = (id: number) =>
-      (standings.find((s) => s.team_id === id)?.form || "")
-        .split("")
-        .reduce((acc, c) => acc + (c === "W" ? 1 : c === "D" ? 0.5 : 0), 0);
-
-    const avgGoalsPerGame = (id: number) => {
-      const s = standings.find((x) => x.team_id === id);
-      if (!s || !s.played) return 0;
-      return (s.goals_for + s.goals_against) / s.played;
-    };
-
-    const out: Insight[] = [];
-
-    for (const fx of fixturesToday) {
-      const r1 = rankOf(fx.home_team_id);
-      const r2 = rankOf(fx.away_team_id);
-      const diff = Math.abs(r1 - r2);
-      const f1 = formScore(fx.home_team_id);
-      const f2 = formScore(fx.away_team_id);
-      const g1 = avgGoalsPerGame(fx.home_team_id);
-      const g2 = avgGoalsPerGame(fx.away_team_id);
-
-      // 1) Big Match: both inside top 6
-      if (r1 <= 6 && r2 <= 6) {
-        out.push({ tag: "Big Match", title: "Top-table clash", heat: 95, fixture: fx });
-      }
-
-      // 2) Upset Watch: rank gap is big (>=8)
-      if (diff >= 8) {
-        out.push({ tag: "Upset Watch", title: "Potential upset on the cards", heat: 88, fixture: fx });
-      }
-
-      // 3) Hot Form: combined recent form strong (>=7)
-      if (f1 + f2 >= 7) {
-        out.push({ tag: "Hot Form", title: "Both teams in great form", heat: 92, fixture: fx });
-      }
-
-      // 4) High Scoring: high avg goals per game
-      if (g1 + g2 >= 5.6 /* ~2.8 each */) {
-        out.push({ tag: "High Scoring", title: "Likely to see goals", heat: 86, fixture: fx });
-      }
-    }
-
-    // Deduplicate by fixture id, keep spiciest tag first
-    const bestByFx = new Map<number, Insight>();
-    for (const ins of out.sort((a, b) => b.heat - a.heat)) {
-      if (!bestByFx.has(ins.fixture.id)) bestByFx.set(ins.fixture.id, ins);
-    }
-
-    return [...bestByFx.values()].slice(0, 3);
-  }, [fixturesToday, standings]);
+  const insights = useMemo(
+    () => pickFeaturedInsights(fixturesToday, standings),
+    [fixturesToday, standings],
+  );
 
   // Group fixtures by league, optionally filtering by favorites
   const fixturesByLeague = useMemo(() => {

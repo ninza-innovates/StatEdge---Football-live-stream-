@@ -96,7 +96,7 @@ src/
   contexts/               auth and subscription state
   hooks/
   integrations/supabase/  browser client and generated table types
-  utils/matchSlug.ts      fixture URL slugs
+  utils/                  fixture URL slugs and featured-insight scoring
   assets/                 logo and league artwork
 public/                   favicon and uploaded images
 supabase/
