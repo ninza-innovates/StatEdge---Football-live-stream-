@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { resolveSyncLeagueIds } from "./leagues.ts";
 const RAPIDAPI_KEY = Deno.env.get("RAPIDAPI_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-// >>> ONLY THESE LEAGUES <<<
-const TARGET_LEAGUES = [2, 3, 39, 40, 41, 61, 78, 88, 94, 135, 140, 253];
 const CURRENT_SEASON = 2025;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -226,19 +225,25 @@ serve(async (req) => {
     });
   try {
     const url = new URL(req.url);
-    // Optional override: ?league=39 or ?leagues=39,61,140
-    const leagueParam = url.searchParams.get("league");
-    const leaguesParam = url.searchParams.get("leagues");
-    let leagueIds = TARGET_LEAGUES.slice();
-    if (leaguesParam) {
-      leagueIds = leaguesParam
-        .split(",")
-        .map((s) => parseInt(s.trim(), 10))
-        .filter((n) => !isNaN(n));
-    } else if (leagueParam) {
-      const n = parseInt(leagueParam, 10);
-      if (!isNaN(n)) leagueIds = [n];
+    // Optional override: ?league=39 or ?leagues=39,61,140.
+    // Unknown ids are rejected before archiving or calling API-Football.
+    const selection = resolveSyncLeagueIds(url.searchParams);
+    if (!selection.ok) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: selection.error,
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+          },
+          status: 400,
+        },
+      );
     }
+    const leagueIds = selection.leagueIds;
     console.log("=== SYNC START ===", {
       season: CURRENT_SEASON,
       leagues: leagueIds,
