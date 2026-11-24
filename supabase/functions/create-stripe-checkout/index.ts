@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
+import { parseRedirectUrl } from '../_shared/redirectUrl.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   apiVersion: '2025-08-27.basil',
@@ -17,6 +18,19 @@ serve(async (req) => {
 
   try {
     const { priceId, successUrl, cancelUrl } = await req.json();
+
+    const success = parseRedirectUrl(successUrl);
+    const cancel = parseRedirectUrl(cancelUrl);
+    if (!success.ok || !cancel.ok) {
+      const message = success.ok ? cancel.error : success.error;
+      return new Response(
+        JSON.stringify({ error: message }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
 
     // Get the user from the authorization header
     const authHeader = req.headers.get('Authorization');
@@ -77,8 +91,8 @@ serve(async (req) => {
         },
       ],
       mode: 'subscription',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: success.url,
+      cancel_url: cancel.url,
       metadata: {
         user_id: user.id,
       },
