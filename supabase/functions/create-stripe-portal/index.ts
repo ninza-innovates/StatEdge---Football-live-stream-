@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
+import { parseRedirectUrl } from '../_shared/redirectUrl.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   apiVersion: '2025-08-27.basil',
@@ -17,6 +18,17 @@ serve(async (req) => {
 
   try {
     const { returnUrl } = await req.json();
+
+    const returnTo = parseRedirectUrl(returnUrl);
+    if (!returnTo.ok) {
+      return new Response(
+        JSON.stringify({ error: returnTo.error }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
 
     // Get the user's email from the authorization header
     const authHeader = req.headers.get('Authorization');
@@ -56,7 +68,7 @@ serve(async (req) => {
     // Create a portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: subscriber.stripe_customer_id,
-      return_url: returnUrl,
+      return_url: returnTo.url,
     });
 
     return new Response(
