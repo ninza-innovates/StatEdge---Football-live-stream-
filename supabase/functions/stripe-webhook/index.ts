@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
+import { tierForPrice } from '../_shared/stripePrice.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   apiVersion: '2025-08-27.basil',
@@ -10,11 +11,6 @@ const cryptoProvider = Stripe.createSubtleCryptoProvider();
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const PRICE_TO_TIER: Record<string, string> = {
-  'price_1S5umL93V4MxVtg8ofpuszEl': 'Weekly',
-  'price_1S5umg93V4MxVtg8OZ7fGzOi': 'Monthly',
 };
 
 serve(async (req) => {
@@ -81,7 +77,7 @@ serve(async (req) => {
       
       // Get the price ID from the subscription
       const priceId = subscription.items.data[0]?.price.id;
-      const tier = PRICE_TO_TIER[priceId] || 'Unknown';
+      const tier = tierForPrice(priceId) ?? 'Unknown';
       
       console.log(`Updating user ${userId} to ${tier} tier (price: ${priceId})`);
 
@@ -124,7 +120,7 @@ serve(async (req) => {
 
       const customerId = subscription.customer as string;
       const priceId = subscription.items.data[0]?.price.id;
-      const tier = PRICE_TO_TIER[priceId] || 'Unknown';
+      const tier = tierForPrice(priceId) ?? 'Unknown';
       const currentPeriodEndUnix =
         subscription.current_period_end ??
         subscription.items?.data?.[0]?.current_period_end;

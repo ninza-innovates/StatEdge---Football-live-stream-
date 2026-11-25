@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { parseRedirectUrl } from '../_shared/redirectUrl.ts';
+import { parseCheckoutPriceId } from '../_shared/stripePrice.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
   apiVersion: '2025-08-27.basil',
@@ -18,6 +19,17 @@ serve(async (req) => {
 
   try {
     const { priceId, successUrl, cancelUrl } = await req.json();
+
+    const price = parseCheckoutPriceId(priceId);
+    if (!price.ok) {
+      return new Response(
+        JSON.stringify({ error: price.error }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      );
+    }
 
     const success = parseRedirectUrl(successUrl);
     const cancel = parseRedirectUrl(cancelUrl);
@@ -86,7 +98,7 @@ serve(async (req) => {
       customer: customerId,
       line_items: [
         {
-          price: priceId,
+          price: price.priceId,
           quantity: 1,
         },
       ],
