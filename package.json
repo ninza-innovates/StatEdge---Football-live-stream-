@@ -10,7 +10,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
-    "test": "node --test src/utils/matchSlug.test.ts supabase/functions/send-contact-email/format.test.ts supabase/functions/sync-football-data/leagues.test.ts supabase/functions/_shared/redirectUrl.test.ts src/utils/featuredInsights.test.ts",
+    "test": "node --test src/utils/matchSlug.test.ts supabase/functions/send-contact-email/format.test.ts supabase/functions/sync-football-data/leagues.test.ts supabase/functions/_shared/redirectUrl.test.ts supabase/functions/_shared/stripePrice.test.ts src/utils/featuredInsights.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
