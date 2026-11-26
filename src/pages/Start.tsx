@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { TrendingUp, Zap, Shield, CheckCircle2, Clock, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet';
+import { shouldShowExitIntent } from '@/utils/exitIntent';
 
 interface MatchPreview {
   id: string;
@@ -21,63 +22,72 @@ const Start = () => {
   const [featuredMatches, setFeaturedMatches] = useState<MatchPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  // Scroll offset lives in a ref. Keeping it in state re-ran the effect on
+  // every scroll, which refetched matches and recorded another PageView.
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     if (window.fbq) {
       window.fbq('track', 'PageView');
     }
 
+    let cancelled = false;
+
+    const fetchFeaturedMatches = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('fixtures')
+          .select(`
+            id,
+            date,
+            home_team:teams!fixtures_home_team_id_fkey(name),
+            away_team:teams!fixtures_away_team_id_fkey(name),
+            league:leagues!fixtures_league_id_fkey(name)
+          `)
+          .gte('date', new Date().toISOString())
+          .eq('status', 'NS')
+          .order('date', { ascending: true })
+          .limit(3);
+
+        if (error) throw error;
+        if (cancelled) return;
+
+        const matches: MatchPreview[] = (data || []).map((match: any) => ({
+          id: match.id,
+          home_team_name: match.home_team?.name || 'TBD',
+          away_team_name: match.away_team?.name || 'TBD',
+          league_name: match.league?.name || 'Unknown',
+          date: match.date,
+        }));
+
+        setFeaturedMatches(matches);
+      } catch (error) {
+        if (!cancelled) console.error('Error fetching matches:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
     fetchFeaturedMatches();
-    
-    // Exit-intent detection for mobile (scroll up quickly)
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
-      if (currentScrollY < lastScrollY - 50 && currentScrollY < 200) {
+
+      if (shouldShowExitIntent(currentScrollY, lastScrollY.current)) {
         setShowExitModal(true);
       }
-      
-      setLastScrollY(currentScrollY);
+
+      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
-  const fetchFeaturedMatches = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('fixtures')
-        .select(`
-          id,
-          date,
-          home_team:teams!fixtures_home_team_id_fkey(name),
-          away_team:teams!fixtures_away_team_id_fkey(name),
-          league:leagues!fixtures_league_id_fkey(name)
-        `)
-        .gte('date', new Date().toISOString())
-        .eq('status', 'NS')
-        .order('date', { ascending: true })
-        .limit(3);
-
-      if (error) throw error;
-
-      const matches: MatchPreview[] = (data || []).map((match: any) => ({
-        id: match.id,
-        home_team_name: match.home_team?.name || 'TBD',
-        away_team_name: match.away_team?.name || 'TBD',
-        league_name: match.league?.name || 'Unknown',
-        date: match.date,
-      }));
-
-      setFeaturedMatches(matches);
-    } catch (error) {
-      console.error('Error fetching matches:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, []);
 
   const handleSignUpClick = () => {
     // Facebook Pixel - InitiateCheckout
