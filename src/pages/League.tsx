@@ -14,6 +14,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import PricingModal from "@/components/PricingModal";
 import { generateMatchSlug } from "@/utils/matchSlug";
+import {
+  filterLeagueFixtures,
+  fixtureWindowEnd,
+  parseFixtureDateRange,
+  parseKickoffWindow,
+  type FixtureDateRange,
+  type KickoffWindow,
+} from "@/utils/leagueFixtures";
 import { AdminSyncButton } from "@/components/AdminSyncButton";
 
 type TabType = "fixtures" | "table" | "form" | "scorers";
@@ -72,7 +80,8 @@ const League = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [searchQuery, setSearchQuery] = useState("");
-  const [dateFilter, setDateFilter] = useState("next-2-days");
+  const [dateFilter, setDateFilter] = useState<FixtureDateRange>("next-2-days");
+  const [kickoffFilter, setKickoffFilter] = useState<KickoffWindow>("all");
 
   useEffect(() => {
     fetchLeague();
@@ -197,7 +206,7 @@ const League = () => {
 
               {/* Filters */}
               <div className="flex items-center gap-3 mb-6 flex-wrap">
-                <Select value={dateFilter} onValueChange={setDateFilter}>
+                <Select value={dateFilter} onValueChange={(value) => setDateFilter(parseFixtureDateRange(value))}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select date range" />
                   </SelectTrigger>
@@ -228,7 +237,7 @@ const League = () => {
                   </Button>
                 </div>
 
-                <Select defaultValue="all">
+                <Select value={kickoffFilter} onValueChange={(value) => setKickoffFilter(parseKickoffWindow(value))}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Kick-off" />
                   </SelectTrigger>
@@ -270,7 +279,16 @@ const League = () => {
               </div>
 
               {/* Tab Content */}
-              {activeTab === "fixtures" && <FixturesTab leagueId={league.id} setActiveTab={setActiveTab} />}
+              {activeTab === "fixtures" && (
+                <FixturesTab
+                  leagueId={league.id}
+                  setActiveTab={setActiveTab}
+                  dateFilter={dateFilter}
+                  searchQuery={searchQuery}
+                  kickoffFilter={kickoffFilter}
+                  viewMode={viewMode}
+                />
+              )}
               {activeTab === "table" && <TableTab leagueId={league.id} />}
               {activeTab === "form" && <FormTab leagueId={league.id} setActiveTab={setActiveTab} />}
               {activeTab === "scorers" && <ScorersTab leagueId={league.id} />}
@@ -283,7 +301,21 @@ const League = () => {
 };
 
 // Fixtures Tab Component
-const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTab: (tab: TabType) => void }) => {
+const FixturesTab = ({
+  leagueId,
+  setActiveTab,
+  dateFilter,
+  searchQuery,
+  kickoffFilter,
+  viewMode,
+}: {
+  leagueId: number;
+  setActiveTab: (tab: TabType) => void;
+  dateFilter: FixtureDateRange;
+  searchQuery: string;
+  kickoffFilter: KickoffWindow;
+  viewMode: "list" | "grid";
+}) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -297,49 +329,66 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchFixtures();
+    let cancelled = false;
+
+    const loadFixtures = async () => {
+      setLoading(true);
+      const from = new Date();
+      const end = fixtureWindowEnd(dateFilter, from);
+
+      try {
+        // Upcoming fixtures (NS = Not Started) inside the selected date window.
+        let request = supabase
+          .from("fixtures")
+          .select("*, goals")
+          .eq("league_id", leagueId)
+          .eq("status", "NS")
+          .gte("date", from.toISOString());
+
+        if (end) {
+          request = request.lte("date", end.toISOString());
+        }
+
+        const { data: fixturesData, error: fixturesError } = await request.order("date", { ascending: true });
+
+        if (fixturesError) throw fixturesError;
+
+        const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
+
+        if (teamsError) throw teamsError;
+        if (cancelled) return;
+
+        const teamsMap = new Map<number, Team>();
+        teamsData?.forEach((team) => {
+          teamsMap.set(team.id, team);
+        });
+
+        setTeams(teamsMap);
+        setFixtures(fixturesData || []);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Error fetching fixtures:", error);
+          setFixtures([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadFixtures();
+    return () => {
+      cancelled = true;
+    };
+  }, [leagueId, dateFilter]);
+
+  useEffect(() => {
     fetchStandings();
     if (user) {
       fetchFavorites();
     }
+    // Standings and favourites do not depend on the fixture date window.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, user]);
-
-  const fetchFixtures = async () => {
-    const from = new Date(Date.now()).toISOString();
-    const to = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    try {
-      // Fetch upcoming fixtures (NS = Not Started) for this league
-      const { data: fixturesData, error: fixturesError } = await supabase
-        .from("fixtures")
-        .select("*, goals")
-        .eq("league_id", leagueId)
-        .eq("status", "NS")
-        .gte("date", from)
-        .lte("date", to)
-        // .gte("date", new Date().toISOString())
-        .order("date", { ascending: true });
-
-      if (fixturesError) throw fixturesError;
-
-      // Fetch all teams
-      const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*");
-
-      if (teamsError) throw teamsError;
-
-      // Create a map of teams for quick lookup
-      const teamsMap = new Map<number, Team>();
-      teamsData?.forEach((team) => {
-        teamsMap.set(team.id, team);
-      });
-
-      setTeams(teamsMap);
-      setFixtures(fixturesData || []);
-    } catch (error) {
-      console.error("Error fetching fixtures:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchStandings = async () => {
     try {
@@ -432,6 +481,15 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
     }
   };
 
+  const visibleFixtures = useMemo(
+    () =>
+      filterLeagueFixtures(fixtures, (teamId) => teams.get(teamId)?.name, {
+        searchQuery,
+        kickoff: kickoffFilter,
+      }),
+    [fixtures, teams, searchQuery, kickoffFilter],
+  );
+
   if (loading) {
     return <Skeleton className="h-96 w-full" />;
   }
@@ -439,7 +497,7 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
   if (fixtures.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No fixtures available for this league yet.</p>
+        <p className="text-muted-foreground">No upcoming fixtures in this date range.</p>
       </div>
     );
   }
@@ -453,7 +511,11 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
           <h2 className="text-2xl font-bold">Upcoming Fixtures</h2>
         </div>
 
-        {fixtures.map((fixture) => {
+        {visibleFixtures.length === 0 ? (
+          <p className="text-center text-muted-foreground py-12">No fixtures match these filters.</p>
+        ) : (
+        <div className={viewMode === "grid" ? "grid gap-4 sm:grid-cols-2" : "space-y-4"}>
+        {visibleFixtures.map((fixture) => {
           const homeTeam = teams.get(fixture.home_team_id);
           const awayTeam = teams.get(fixture.away_team_id);
           const fixtureDate = new Date(fixture.date);
@@ -572,6 +634,8 @@ const FixturesTab = ({ leagueId, setActiveTab }: { leagueId: number; setActiveTa
             </div>
           );
         })}
+        </div>
+        )}
       </div>
 
       {/* Pricing Modal */}
