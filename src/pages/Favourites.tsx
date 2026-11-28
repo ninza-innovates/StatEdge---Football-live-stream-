@@ -11,26 +11,47 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { generateMatchSlug } from "@/utils/matchSlug";
+import {
+  readFavouriteFixture,
+  toFavouriteCard,
+  type FavouriteCard,
+  type FavouriteFixtureSource,
+} from "@/utils/favourites";
 
-interface FavouriteFixture {
-  id: string;
-  fixture_id: number;
-  fixture: {
-    id: number;
-    home_team: { name: string; logo: string };
-    away_team: { name: string; logo: string };
-    league: { name: string };
-    date: string;
-    status: string;
-    goals: { home: number; away: number } | null;
-  };
+const FINISHED_STATUSES = new Set(["FT", "AET", "PEN"]);
+
+/**
+ * Prefer the live fixture joined from `fixtures`.
+ * Sync moves finished matches into `fixtures_archive` and deletes the live row,
+ * which used to throw while mapping favourites and hide every saved match.
+ */
+async function loadFavouriteFixture(
+  fixtureId: number | null,
+  joined: unknown,
+): Promise<FavouriteFixtureSource | null> {
+  const live = readFavouriteFixture(joined);
+  if (live) return live;
+  if (fixtureId == null) return null;
+
+  const { data, error } = await supabase
+    .from("fixtures_archive")
+    .select("id, home_team_id, away_team_id, league_id, date, status, goals")
+    .eq("id", fixtureId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error loading archived favourite:", error);
+    return null;
+  }
+
+  return readFavouriteFixture(data);
 }
 
 export default function Favourites() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [favourites, setFavourites] = useState<FavouriteFixture[]>([]);
+  const [favourites, setFavourites] = useState<FavouriteCard[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,34 +82,32 @@ export default function Favourites() {
 
       if (error) throw error;
 
-      // Fetch team and league details for each fixture
-      const enrichedData = await Promise.all(
-        (data || []).map(async (fav: any) => {
-          const fixture = fav.fixtures;
-          
+      const cards = await Promise.all(
+        (data || []).map(async (fav) => {
+          const fixture = await loadFavouriteFixture(fav.fixture_id, fav.fixtures);
+          if (!fixture) return null;
+
           const [homeTeam, awayTeam, league] = await Promise.all([
-            supabase.from('teams').select('name, logo').eq('id', fixture.home_team_id).single(),
-            supabase.from('teams').select('name, logo').eq('id', fixture.away_team_id).single(),
-            supabase.from('leagues').select('name').eq('id', fixture.league_id).single(),
+            supabase.from("teams").select("name, logo").eq("id", fixture.home_team_id).maybeSingle(),
+            supabase.from("teams").select("name, logo").eq("id", fixture.away_team_id).maybeSingle(),
+            supabase.from("leagues").select("name").eq("id", fixture.league_id).maybeSingle(),
           ]);
 
-          return {
+          if (homeTeam.error) throw homeTeam.error;
+          if (awayTeam.error) throw awayTeam.error;
+          if (league.error) throw league.error;
+
+          return toFavouriteCard({
             id: fav.id,
-            fixture_id: fav.fixture_id,
-            fixture: {
-              id: fixture.id,
-              home_team: homeTeam.data,
-              away_team: awayTeam.data,
-              league: league.data,
-              date: fixture.date,
-              status: fixture.status,
-              goals: fixture.goals,
-            },
-          };
-        })
+            fixture,
+            homeTeam: homeTeam.data,
+            awayTeam: awayTeam.data,
+            leagueName: league.data?.name,
+          });
+        }),
       );
 
-      setFavourites(enrichedData);
+      setFavourites(cards.filter((card): card is FavouriteCard => card !== null));
     } catch (error) {
       console.error('Error fetching favourites:', error);
       toast({
@@ -192,16 +211,18 @@ export default function Favourites() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
                           <div className="flex items-center gap-2 flex-1">
-                            <img 
-                              src={fav.fixture.home_team.logo} 
-                              alt={fav.fixture.home_team.name}
-                              className="h-8 w-8 object-contain"
-                            />
+                            {fav.fixture.home_team.logo ? (
+                              <img
+                                src={fav.fixture.home_team.logo}
+                                alt={fav.fixture.home_team.name}
+                                className="h-8 w-8 object-contain"
+                              />
+                            ) : null}
                             <span className="font-semibold">{fav.fixture.home_team.name}</span>
                           </div>
                           
                           <div className="text-center px-4">
-                            {fav.fixture.status === 'FT' && fav.fixture.goals ? (
+                            {FINISHED_STATUSES.has(fav.fixture.status) && fav.fixture.goals ? (
                               <div className="text-2xl font-bold">
                                 {fav.fixture.goals.home} - {fav.fixture.goals.away}
                               </div>
@@ -212,11 +233,13 @@ export default function Favourites() {
 
                           <div className="flex items-center gap-2 flex-1 justify-end">
                             <span className="font-semibold">{fav.fixture.away_team.name}</span>
-                            <img 
-                              src={fav.fixture.away_team.logo} 
-                              alt={fav.fixture.away_team.name}
-                              className="h-8 w-8 object-contain"
-                            />
+                            {fav.fixture.away_team.logo ? (
+                              <img
+                                src={fav.fixture.away_team.logo}
+                                alt={fav.fixture.away_team.name}
+                                className="h-8 w-8 object-contain"
+                              />
+                            ) : null}
                           </div>
                         </div>
                       </div>

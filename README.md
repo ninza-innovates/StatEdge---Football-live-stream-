@@ -50,7 +50,7 @@ npm run build:dev    # vite build --mode development
 npm run preview      # serve the production build
 npm run lint         # eslint .
 npm run typecheck    # tsc --noEmit for the app and vite.config.ts
-npm test             # node:test for match slugs and contact-email formatting
+npm test             # node:test for shared helpers
 ```
 
 ## Key features
